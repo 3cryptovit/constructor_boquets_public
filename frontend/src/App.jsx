@@ -2,6 +2,7 @@ import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Header from "./components/Header";
 import HomePage from "./pages/HomePage";
+import Constructor from "./pages/Constructor";
 import Catalog from "./components/Catalog";
 import Cart from "./components/Cart";
 import Login from "./components/Login";
@@ -21,6 +22,7 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/contacts" element={<Contacts />} />
         <Route path="/about" element={<About />} />
+        <Route path="/constructor" element={<Constructor />} />
       </Routes>
     </Router>
   );

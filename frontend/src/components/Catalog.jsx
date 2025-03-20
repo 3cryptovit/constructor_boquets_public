@@ -11,12 +11,12 @@ function Catalog() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetch("http://localhost:5000/bouquets") 
+    fetch("http://localhost:5000/api/bouquets")
       .then((response) => {
         if (!response.ok) {
           throw new Error('Ошибка сети');
         }
-        return response.json();     
+        return response.json();
       })
       .then((data) => {
         if (!Array.isArray(data)) {

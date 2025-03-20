@@ -9,10 +9,12 @@ function Header() {
       </div>
       <nav>
         <Link to="/catalog" style={styles.link}>Каталог</Link>
+        <Link to="/constructor" style={styles.link}>Конструктор</Link>
         <Link to="/cart" style={styles.link}>Корзина</Link>
         <Link to="/contacts" style={styles.link}>Контакты</Link>
         <Link to="/about" style={styles.link}>О нас</Link>
         <Link to="/login" style={styles.link}>Войти</Link>
+        <Link to="/register" style={styles.link}>Регистрация</Link>
       </nav>
     </header>
   );
