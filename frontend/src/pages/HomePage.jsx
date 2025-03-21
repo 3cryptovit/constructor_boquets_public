@@ -1,14 +1,28 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 function HomePage() {
+  const [username, setUsername] = useState(null);
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem("username");
+    if (storedUser && storedUser !== "undefined") {
+      setUsername(storedUser);
+    }
+  }, []);
+
   return (
     <div style={styles.container}>
-      <h1 style={styles.title}>Добро пожаловать в Boquet Shop!</h1>
+      <h1 style={styles.title}>
+        {username ? `Добро пожаловать, ${username}!` : "Добро пожаловать в Boquet Shop!"}
+      </h1>
       <p style={styles.subtitle}>Собери идеальный букет для любого случая.</p>
-      
+
       <div style={styles.buttonContainer}>
         <Link to="/catalog" style={styles.button}>Перейти в каталог</Link>
+        {!username && (
+          <Link to="/login" style={{ ...styles.button, marginLeft: "15px", background: "#4CAF50" }}>Войти в аккаунт</Link>
+        )}
       </div>
 
       <div style={styles.images}>

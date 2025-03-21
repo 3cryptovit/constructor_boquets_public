@@ -9,6 +9,9 @@ import Login from "./components/Login";
 import Register from "./components/Register";
 import Contacts from "./components/Contacts";
 import About from "./components/About";
+import BouquetDetails from "./pages/BouquetDetails";
+import Favorites from "./components/Favorites";
+import Admin from "./components/Admin";
 
 function App() {
   return (
@@ -17,12 +20,15 @@ function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/catalog" element={<Catalog />} />
+        <Route path="/bouquet/:id" element={<BouquetDetails />} />
         <Route path="/cart" element={<Cart />} />
+        <Route path="/favorites" element={<Favorites />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/contacts" element={<Contacts />} />
         <Route path="/about" element={<About />} />
         <Route path="/constructor" element={<Constructor />} />
+        <Route path="/admin" element={<Admin />} />
       </Routes>
     </Router>
   );

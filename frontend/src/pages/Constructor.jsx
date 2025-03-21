@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const Constructor = () => {
   const [flowers, setFlowers] = useState([]); // Доступные цветы
@@ -6,14 +7,31 @@ const Constructor = () => {
   const [bouquet, setBouquet] = useState([]); // Состав букета
   const [bouquetId, setBouquetId] = useState(null); // ID созданного букета
   const [bouquetName, setBouquetName] = useState("Мой букет");
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const navigate = useNavigate();
+
+  // Проверка авторизации
+  useEffect(() => {
+    const userId = localStorage.getItem("userId");
+    const username = localStorage.getItem("username");
+
+    if (!userId || !username || username === "undefined") {
+      alert("Для доступа к конструктору необходимо войти в аккаунт");
+      navigate("/login");
+    } else {
+      setIsAuthenticated(true);
+    }
+  }, [navigate]);
 
   // Загружаем цветы с backend
   useEffect(() => {
-    fetch("http://localhost:5000/api/flowers")
-      .then((response) => response.json())
-      .then((data) => setFlowers(data))
-      .catch((error) => console.error("Ошибка загрузки цветов:", error));
-  }, []);
+    if (isAuthenticated) {
+      fetch("http://localhost:5000/api/flowers")
+        .then((response) => response.json())
+        .then((data) => setFlowers(data))
+        .catch((error) => console.error("Ошибка загрузки цветов:", error));
+    }
+  }, [isAuthenticated]);
 
   // Создаём новый букет
   const createNewBouquet = async () => {

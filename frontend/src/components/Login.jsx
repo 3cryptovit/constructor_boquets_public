@@ -1,60 +1,155 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 function Login() {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+  const [formData, setFormData] = useState({
+    username: "",
+    password: ""
+  });
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-
-    const response = await fetch("http://localhost:5000/api/login", { // <-- исправленный путь
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password }),
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({
+      ...formData,
+      [name]: value
     });
+  };
 
-    const data = await response.json();
-    if (response.ok) {
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("userId", data.userId);
-      localStorage.setItem("username", data.username);
-      navigate("/");
-    } else {
-      setError(data.error || "❌ Неверный логин или пароль!");
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!formData.username || !formData.password) {
+      setError("Пожалуйста, заполните все поля");
+      return;
     }
+
+    setLoading(true);
+    setError("");
+
+    fetch("http://localhost:5000/api/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(formData)
+    })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error("Неверное имя пользователя или пароль");
+        }
+        return response.json();
+      })
+      .then(data => {
+        // Сохраняем данные в localStorage
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("userId", data.userId);
+        localStorage.setItem("username", data.username);
+        localStorage.setItem("userRole", data.role || "user"); // Сохраняем роль пользователя
+
+        // Перенаправляем на главную страницу
+        navigate("/");
+      })
+      .catch(error => {
+        setError(error.message);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   };
 
   return (
-    <div className="container">
-      <h1>Вход</h1>
-      <form onSubmit={handleLogin} className="form">
+    <div style={styles.container}>
+      <h1 style={styles.title}>Вход в аккаунт</h1>
+
+      {error && <p style={styles.error}>{error}</p>}
+
+      <form onSubmit={handleSubmit} style={styles.form}>
         <input
           type="text"
-          placeholder="Логин"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          required
-          className="input"
+          name="username"
+          placeholder="Имя пользователя"
+          value={formData.username}
+          onChange={handleChange}
+          style={styles.input}
+          disabled={loading}
         />
+
         <input
           type="password"
+          name="password"
           placeholder="Пароль"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          className="input"
+          value={formData.password}
+          onChange={handleChange}
+          style={styles.input}
+          disabled={loading}
         />
-        <button type="submit" className="button">Войти</button>
+
+        <button
+          type="submit"
+          style={styles.button}
+          disabled={loading}
+        >
+          {loading ? "Загрузка..." : "Войти"}
+        </button>
       </form>
-      {error && <p className="error">{error}</p>}
-      <p>
-        Нет аккаунта? <a href="/register" className="link">Регистрация</a>
+
+      <p style={styles.signupPrompt}>
+        Нет аккаунта? <Link to="/register" style={styles.link}>Зарегистрироваться</Link>
       </p>
     </div>
   );
 }
+
+const styles = {
+  container: {
+    maxWidth: "400px",
+    margin: "40px auto",
+    padding: "20px",
+    backgroundColor: "#fff",
+    borderRadius: "8px",
+    boxShadow: "0 0 10px rgba(0, 0, 0, 0.1)"
+  },
+  title: {
+    textAlign: "center",
+    marginBottom: "20px",
+    color: "#333"
+  },
+  form: {
+    display: "flex",
+    flexDirection: "column"
+  },
+  input: {
+    padding: "12px",
+    marginBottom: "15px",
+    border: "1px solid #ddd",
+    borderRadius: "4px",
+    fontSize: "16px"
+  },
+  button: {
+    padding: "12px",
+    backgroundColor: "#ff4081",
+    color: "white",
+    border: "none",
+    borderRadius: "4px",
+    cursor: "pointer",
+    fontSize: "16px",
+    marginTop: "10px"
+  },
+  error: {
+    color: "red",
+    textAlign: "center",
+    marginBottom: "20px"
+  },
+  signupPrompt: {
+    textAlign: "center",
+    marginTop: "20px"
+  },
+  link: {
+    color: "#ff4081",
+    textDecoration: "none"
+  }
+};
 
 export default Login;
