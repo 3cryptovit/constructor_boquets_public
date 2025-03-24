@@ -151,61 +151,95 @@ function Catalog() {
   ];
 
   return (
-    <div style={styles.container}>
-      <h1 style={styles.title}>Каталог букетов</h1>
-      <p style={styles.subtitle}>Выберите готовый букет или создайте свой в нашем конструкторе</p>
+    <div className="main-content" style={{
+      padding: '60px 0',
+      background: 'rgba(255, 255, 255, 0.8)',
+      backdropFilter: 'blur(10px)'
+    }}>
+      <div className="container">
+        <h2 style={{
+          fontSize: '36px',
+          fontWeight: 'bold',
+          color: '#333',
+          marginBottom: '40px',
+          textAlign: 'center'
+        }}>
+          Каталог букетов
+        </h2>
 
-      <div style={styles.grid}>
-        {displayBouquets.map((bouquet, index) => (
-          <div key={bouquet.id} style={{ ...styles.card, animationDelay: `${index * 0.1}s` }}>
-            <div
-              style={{
-                ...styles.cardImage,
-                backgroundImage: `url('${bouquet.image_url || "https://via.placeholder.com/300x300?text=Bouquet"}')`
-              }}
-            >
-              <div style={styles.price}>{bouquet.price} ₽</div>
-              <button
-                style={styles.favoriteButton}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleToggleFavorite(bouquet);
-                }}
-              >
-                {isFavorite(bouquet.id) ? "❤️" : "🤍"}
-              </button>
-            </div>
-            <div style={styles.cardContent}>
-              <h2 style={styles.cardTitle}>{bouquet.name}</h2>
-              <p style={styles.cardDescription}>{bouquet.description || "Красивый букет цветов"}</p>
-              <div style={styles.cardActions}>
-                <button
-                  style={styles.addButton}
-                  onClick={() => handleAddToCart(bouquet)}
-                >
-                  В корзину
-                </button>
-                <button
-                  style={styles.viewButton}
-                  onClick={() => navigate(`/bouquet/${bouquet.id}`)}
-                >
-                  Подробнее
-                </button>
+        <div className="bouquet-grid">
+          {displayBouquets.map((bouquet) => (
+            <div key={bouquet.id} className="card fade-in">
+              <div style={{
+                position: 'relative',
+                paddingTop: '75%',
+                overflow: 'hidden',
+                borderRadius: '8px'
+              }}>
+                <img
+                  src={bouquet.image_url}
+                  alt={bouquet.name}
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    transition: 'transform 0.3s ease'
+                  }}
+                />
+              </div>
+
+              <div style={{
+                padding: '20px 0'
+              }}>
+                <h3 style={{
+                  fontSize: '20px',
+                  fontWeight: '600',
+                  color: '#333',
+                  marginBottom: '10px'
+                }}>
+                  {bouquet.name}
+                </h3>
+
+                <p style={{
+                  color: '#666',
+                  marginBottom: '20px',
+                  fontSize: '14px',
+                  lineHeight: '1.6'
+                }}>
+                  {bouquet.description}
+                </p>
+
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}>
+                  <span style={{
+                    fontSize: '24px',
+                    fontWeight: 'bold',
+                    color: '#ff5e7e'
+                  }}>
+                    {bouquet.price} ₽
+                  </span>
+
+                  <button
+                    className="btn"
+                    style={styles.addButton}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleAddToCart(bouquet);
+                    }}
+                  >
+                    В корзину
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
-
-      <div style={styles.constructorPromo}>
-        <h2>Хотите создать свой уникальный букет?</h2>
-        <p>Используйте наш конструктор букетов, чтобы собрать композицию вашей мечты!</p>
-        <button
-          style={styles.constructorButton}
-          onClick={() => navigate('/constructor')}
-        >
-          Перейти в конструктор
-        </button>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -218,16 +252,6 @@ const styles = {
     maxWidth: "1200px",
     margin: "0 auto"
   },
-  title: {
-    fontSize: "2.5rem",
-    marginBottom: "10px",
-    color: "#333"
-  },
-  subtitle: {
-    fontSize: "1.2rem",
-    color: "#666",
-    marginBottom: "40px"
-  },
   loader: {
     border: "6px solid #f3f3f3",
     borderTop: "6px solid #ff4081",
@@ -237,125 +261,9 @@ const styles = {
     animation: "spin 1s linear infinite",
     margin: "50px auto"
   },
-  grid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
-    gap: "30px",
-    justifyItems: "center"
-  },
-  card: {
-    width: "100%",
-    maxWidth: "300px",
-    background: "#fff",
-    borderRadius: "10px",
-    boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
-    overflow: "hidden",
-    transition: "transform 0.4s ease, box-shadow 0.4s ease",
-    animation: "fadeIn 0.6s ease forwards",
-    opacity: 0,
-    transform: "translateY(20px)",
-    ":hover": {
-      transform: "translateY(-10px)",
-      boxShadow: "0 10px 20px rgba(0,0,0,0.15)"
-    }
-  },
-  cardImage: {
-    height: "200px",
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-    position: "relative"
-  },
-  price: {
-    position: "absolute",
-    right: "10px",
-    top: "10px",
-    background: "#ff4081",
-    color: "white",
-    padding: "5px 10px",
-    borderRadius: "20px",
-    fontWeight: "bold"
-  },
-  cardContent: {
-    padding: "20px"
-  },
-  cardTitle: {
-    fontSize: "1.4rem",
-    margin: "0 0 10px 0",
-    color: "#333"
-  },
-  cardDescription: {
-    color: "#666",
-    fontSize: "0.95rem",
-    margin: "0 0 20px 0",
-    height: "40px",
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    display: "-webkit-box",
-    WebkitLineClamp: 2,
-    WebkitBoxOrient: "vertical"
-  },
-  cardActions: {
-    display: "flex",
-    justifyContent: "space-between"
-  },
   addButton: {
-    background: "#ff4081",
-    color: "white",
-    border: "none",
-    padding: "10px 15px",
-    borderRadius: "5px",
-    cursor: "pointer",
-    transition: "background 0.3s ease",
-    fontWeight: "bold",
-    flex: "1",
-    marginRight: "10px"
-  },
-  viewButton: {
-    background: "transparent",
-    color: "#ff4081",
-    border: "1px solid #ff4081",
-    padding: "10px 15px",
-    borderRadius: "5px",
-    cursor: "pointer",
-    transition: "all 0.3s ease",
-    fontWeight: "bold",
-    flex: "1"
-  },
-  constructorPromo: {
-    margin: "60px 0 20px",
-    padding: "30px",
-    background: "#f8f8f8",
-    borderRadius: "10px"
-  },
-  constructorButton: {
-    background: "#4CAF50",
-    color: "white",
-    border: "none",
-    padding: "12px 25px",
-    borderRadius: "5px",
-    cursor: "pointer",
-    fontSize: "1.1rem",
-    fontWeight: "bold",
-    marginTop: "15px",
-    transition: "background 0.3s ease"
-  },
-  favoriteButton: {
-    position: "absolute",
-    left: "10px",
-    top: "10px",
-    background: "rgba(255, 255, 255, 0.7)",
-    color: "#ff4081",
-    width: "36px",
-    height: "36px",
-    border: "none",
-    borderRadius: "50%",
-    cursor: "pointer",
-    fontSize: "20px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    transition: "transform 0.3s ease",
-    padding: 0
+    padding: '10px 20px',
+    fontSize: '14px'
   }
 };
 

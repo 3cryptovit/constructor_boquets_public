@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 
 function Cart() {
   const [cart, setCart] = useState([]);
+  const [customCart, setCustomCart] = useState([]); // Для кастомных букетов
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [orderPlaced, setOrderPlaced] = useState(false);
@@ -11,13 +12,23 @@ function Cart() {
   const [userId, setUserId] = useState(null);
 
   useEffect(() => {
+    // Получаем данные кастомных букетов из localStorage
+    try {
+      const localCart = JSON.parse(localStorage.getItem('cart') || '[]');
+      console.log("Локальная корзина с кастомными букетами:", localCart);
+      setCustomCart(localCart);
+    } catch (e) {
+      console.error("Ошибка при загрузке кастомных букетов:", e);
+      setCustomCart([]);
+    }
+
     // Получаем токен авторизации из localStorage
     const userToken = localStorage.getItem("token");
     const userIdFromStorage = localStorage.getItem("userId");
 
     // Проверяем, есть ли токен и userId
     if (!userToken || !userIdFromStorage) {
-      setError("Для просмотра корзины необходимо авторизоваться");
+      setError("Для оформления заказа необходимо авторизоваться");
       setLoading(false);
       return;
     }
@@ -25,30 +36,43 @@ function Cart() {
     setToken(userToken);
     setUserId(userIdFromStorage);
 
-    // Запрашиваем содержимое корзины
-    fetch(`http://localhost:5000/api/cart/${userIdFromStorage}`, {
+    console.log("Запрашиваем корзину для пользователя:", userIdFromStorage);
+
+    // Запрашиваем содержимое корзины с сервера
+    fetch('http://localhost:5000/api/cart', {
       headers: {
         'Authorization': `Bearer ${userToken}`
       }
     })
       .then(response => {
+        console.log("Ответ от сервера:", response.status, response.statusText);
         if (!response.ok) {
-          console.error("Ошибка ответа:", response.status, response.statusText);
-          throw new Error('Ошибка загрузки корзины');
+          if (response.status === 401 || response.status === 403) {
+            console.error("Ошибка авторизации:", response.status);
+            throw new Error('Требуется авторизация');
+          }
+          throw new Error(`Ошибка загрузки корзины: ${response.status}`);
         }
         return response.json();
       })
       .then(data => {
-        setCart(data);
+        console.log("Данные корзины с сервера:", data);
+        if (Array.isArray(data)) {
+          setCart(data);
+        } else {
+          console.error("Получены некорректные данные:", data);
+          setCart([]);
+        }
         setLoading(false);
       })
       .catch(error => {
-        console.error("Ошибка загрузки корзины:", error);
-        setError("Не удалось загрузить корзину");
+        console.error("Ошибка загрузки корзины с сервера:", error);
+        setError(error.message || "Не удалось загрузить корзину");
         setLoading(false);
       });
   }, []);
 
+  // Функция для удаления букета из корзины на сервере
   const removeFromCart = (cartItemId) => {
     const token = localStorage.getItem("token");
 
@@ -78,6 +102,7 @@ function Cart() {
       });
   };
 
+  // Обновление количества букетов на сервере
   const updateQuantity = (cartItemId, newQuantity) => {
     if (newQuantity < 1) return;
 
@@ -116,6 +141,38 @@ function Cart() {
       });
   };
 
+  // Функция для удаления кастомного букета из localStorage
+  const removeCustomBouquet = (bouquetId) => {
+    try {
+      const updatedCart = customCart.filter(item => item.id !== bouquetId);
+      setCustomCart(updatedCart);
+      localStorage.setItem('cart', JSON.stringify(updatedCart));
+    } catch (e) {
+      console.error("Ошибка при удалении кастомного букета:", e);
+      setError("Не удалось удалить букет из корзины");
+    }
+  };
+
+  // Обновление количества кастомных букетов в localStorage
+  const updateCustomQuantity = (bouquetId, newQuantity) => {
+    if (newQuantity < 1) return;
+
+    try {
+      const updatedCart = customCart.map(item => {
+        if (item.id === bouquetId) {
+          return { ...item, quantity: newQuantity };
+        }
+        return item;
+      });
+
+      setCustomCart(updatedCart);
+      localStorage.setItem('cart', JSON.stringify(updatedCart));
+    } catch (e) {
+      console.error("Ошибка при обновлении количества:", e);
+      setError("Не удалось обновить количество букета");
+    }
+  };
+
   const placeOrder = () => {
     const token = localStorage.getItem("token");
     const userId = localStorage.getItem("userId");
@@ -125,10 +182,20 @@ function Cart() {
       return;
     }
 
-    if (cart.length === 0) {
+    const hasItems = cart.length > 0 || customCart.length > 0;
+    if (!hasItems) {
       setError("Корзина пуста");
       return;
     }
+
+    // Объединяем данные корзины с сервера и из localStorage
+    const allCartItems = [
+      ...cart,
+      ...customCart.map(item => ({
+        ...item,
+        isCustom: true
+      }))
+    ];
 
     fetch("http://localhost:5000/api/orders", {
       method: "POST",
@@ -136,7 +203,10 @@ function Cart() {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({ userId })
+      body: JSON.stringify({
+        userId,
+        items: allCartItems
+      })
     })
       .then(res => {
         if (!res.ok) {
@@ -145,7 +215,11 @@ function Cart() {
         return res.json();
       })
       .then(data => {
+        // Очищаем корзину
         setCart([]);
+        setCustomCart([]);
+        localStorage.removeItem('cart');
+
         setOrderPlaced(true);
         setTimeout(() => {
           navigate('/');
@@ -157,11 +231,11 @@ function Cart() {
       });
   };
 
-  if (loading) {
+  if (loading && !customCart.length) {
     return <div style={styles.container}><p>Загрузка корзины...</p></div>;
   }
 
-  if (error && !cart.length) {
+  if (error && !cart.length && !customCart.length) {
     return (
       <div style={styles.container}>
         <h1 style={styles.title}>🛒 Корзина</h1>
@@ -186,246 +260,280 @@ function Cart() {
     );
   }
 
+  // Объединяем обычные букеты и кастомные букеты для отображения
+  const allItems = [...cart, ...customCart];
+  // Считаем общую стоимость
+  const total = allItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+  const hasItems = allItems.length > 0;
+
   return (
-    <div style={styles.container}>
-      <h1 style={styles.title}>🛒 Корзина</h1>
-      {error && <p style={styles.error}>{error}</p>}
+    <div className="main-content" style={{
+      padding: '60px 0',
+      background: 'rgba(255, 255, 255, 0.8)',
+      backdropFilter: 'blur(10px)',
+      minHeight: 'calc(100vh - 80px)'
+    }}>
+      <div className="container">
+        <h2 style={{
+          fontSize: '36px',
+          fontWeight: 'bold',
+          color: '#333',
+          marginBottom: '40px',
+          textAlign: 'center'
+        }}>
+          Корзина
+        </h2>
 
-      {cart.length === 0 ? (
-        <div>
-          <p style={styles.empty}>Корзина пуста</p>
-          <button
-            style={styles.continueButton}
-            onClick={() => navigate('/catalog')}
-          >
-            Перейти в каталог
-          </button>
-        </div>
-      ) : (
-        <div>
-          <div style={styles.cartList}>
-            {cart.map(item => (
-              <div key={item.id} style={styles.item}>
-                <div style={styles.itemImage}>
-                  <img
-                    src={item.image_url || `/assets/boquet_${item.bouquet_id}.webp`}
-                    alt={item.name}
-                    style={styles.image}
-                  />
-                </div>
-                <div style={styles.itemDetails}>
-                  <h2 style={styles.itemName}>{item.name}</h2>
-                  <p style={styles.itemDescription}>{item.description}</p>
-                  <p style={styles.price}>Цена за шт: {item.price} ₽</p>
-                  <div style={styles.quantityControls}>
-                    <button
-                      style={styles.quantityButton}
-                      onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                      disabled={item.quantity <= 1}
-                    >
-                      -
-                    </button>
-                    <span style={styles.quantity}>{item.quantity}</span>
-                    <button
-                      style={styles.quantityButton}
-                      onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                    >
-                      +
-                    </button>
-                  </div>
-                  <p style={styles.itemTotal}>
-                    Итого: {(item.price * item.quantity).toLocaleString('ru-RU')} ₽
-                  </p>
-                  <button
-                    style={styles.removeButton}
-                    onClick={() => removeFromCart(item.id)}
-                  >
-                    Удалить
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div style={styles.summary}>
-            <h2 style={styles.total}>
-              Итого: {cart.reduce((sum, item) => sum + (item.price * item.quantity), 0).toLocaleString('ru-RU')} ₽
-            </h2>
+        {!hasItems ? (
+          <div className="card fade-in" style={{
+            textAlign: 'center',
+            padding: '40px'
+          }}>
+            <p style={{
+              fontSize: '18px',
+              color: '#666',
+              marginBottom: '20px'
+            }}>
+              Ваша корзина пуста
+            </p>
             <button
-              style={styles.checkout}
-              onClick={placeOrder}
+              className="btn"
+              onClick={() => navigate('/catalog')}
             >
-              Оформить заказ
+              Перейти в каталог
             </button>
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="card fade-in">
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '20px'
+            }}>
+              {/* Отображаем обычные букеты с сервера */}
+              {cart.map((item) => (
+                <div key={item.id} style={{
+                  display: 'flex',
+                  gap: '20px',
+                  padding: '20px',
+                  background: 'rgba(255, 255, 255, 0.5)',
+                  borderRadius: '10px',
+                  boxShadow: '0 2px 5px rgba(0, 0, 0, 0.05)'
+                }}>
+                  <img
+                    src={item.image_url || '/assets/default-bouquet.jpg'}
+                    alt={item.name}
+                    style={{
+                      width: '120px',
+                      height: '120px',
+                      objectFit: 'cover',
+                      borderRadius: '5px'
+                    }}
+                  />
+                  <div style={{ flex: 1 }}>
+                    <h3 style={{ fontSize: '20px', marginBottom: '5px' }}>{item.name}</h3>
+                    <p style={{ color: '#666', fontSize: '14px', marginBottom: '10px' }}>
+                      {item.description}
+                    </p>
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '15px'
+                    }}>
+                      <div>
+                        <button
+                          onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                          style={styles.quantityButton}
+                          disabled={item.quantity <= 1}
+                        >
+                          -
+                        </button>
+                        <span style={styles.quantityValue}>{item.quantity}</span>
+                        <button
+                          onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                          style={styles.quantityButton}
+                        >
+                          +
+                        </button>
+                      </div>
+                      <span style={{ fontWeight: 'bold' }}>
+                        {item.price * item.quantity} ₽
+                      </span>
+                      <button
+                        onClick={() => removeFromCart(item.id)}
+                        style={styles.removeButton}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              {/* Отображаем кастомные букеты из localStorage */}
+              {customCart.map((item) => (
+                <div key={item.id} style={{
+                  display: 'flex',
+                  gap: '20px',
+                  padding: '20px',
+                  background: 'rgba(255, 255, 255, 0.5)',
+                  borderRadius: '10px',
+                  boxShadow: '0 2px 5px rgba(0, 0, 0, 0.05)',
+                  border: '1px dashed var(--primary-color)'
+                }}>
+                  <img
+                    src={item.image_url || '/assets/custom-bouquet.jpg'}
+                    alt={item.name}
+                    style={{
+                      width: '120px',
+                      height: '120px',
+                      objectFit: 'cover',
+                      borderRadius: '5px'
+                    }}
+                  />
+                  <div style={{ flex: 1 }}>
+                    <h3 style={{ fontSize: '20px', marginBottom: '5px' }}>
+                      {item.name}
+                      <span style={{
+                        fontSize: '12px',
+                        color: 'var(--primary-color)',
+                        marginLeft: '5px',
+                        padding: '2px 5px',
+                        background: 'rgba(255, 94, 126, 0.1)',
+                        borderRadius: '3px'
+                      }}>
+                        Собран вами
+                      </span>
+                    </h3>
+                    <p style={{ color: '#666', fontSize: '14px', marginBottom: '10px' }}>
+                      {item.description}
+                    </p>
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '15px'
+                    }}>
+                      <div>
+                        <button
+                          onClick={() => updateCustomQuantity(item.id, item.quantity - 1)}
+                          style={styles.quantityButton}
+                          disabled={item.quantity <= 1}
+                        >
+                          -
+                        </button>
+                        <span style={styles.quantityValue}>{item.quantity}</span>
+                        <button
+                          onClick={() => updateCustomQuantity(item.id, item.quantity + 1)}
+                          style={styles.quantityButton}
+                        >
+                          +
+                        </button>
+                      </div>
+                      <span style={{ fontWeight: 'bold' }}>
+                        {item.price * item.quantity} ₽
+                      </span>
+                      <button
+                        onClick={() => removeCustomBouquet(item.id)}
+                        style={styles.removeButton}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div style={{
+              marginTop: '30px',
+              padding: '20px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              borderTop: '1px solid #eee'
+            }}>
+              <span style={{ fontSize: '20px', fontWeight: 'bold' }}>
+                Итого: {total} ₽
+              </span>
+              <button
+                onClick={placeOrder}
+                style={{
+                  backgroundColor: 'var(--primary-color)',
+                  color: 'white',
+                  border: 'none',
+                  padding: '12px 25px',
+                  borderRadius: '8px',
+                  fontSize: '16px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.transform = 'translateY(-2px)';
+                  e.target.style.boxShadow = '0 4px 10px rgba(0, 0, 0, 0.15)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.transform = 'none';
+                  e.target.style.boxShadow = 'none';
+                }}
+              >
+                Оформить заказ
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
 
 const styles = {
   container: {
-    maxWidth: "900px",
-    margin: "0 auto",
-    padding: "20px",
-    fontFamily: "Arial, sans-serif"
+    maxWidth: '800px',
+    margin: '0 auto',
+    padding: '40px 20px'
   },
   title: {
-    fontSize: "2.5rem",
-    marginBottom: "30px",
-    color: "#333",
-    textAlign: "center"
+    fontSize: '28px',
+    marginBottom: '20px'
   },
   error: {
-    color: "#f44336",
-    marginBottom: "20px",
-    textAlign: "center"
-  },
-  empty: {
-    fontSize: "1.2rem",
-    textAlign: "center",
-    margin: "30px 0"
-  },
-  cartList: {
-    marginBottom: "30px"
-  },
-  item: {
-    display: "flex",
-    padding: "20px",
-    marginBottom: "15px",
-    borderRadius: "8px",
-    boxShadow: "0 2px 10px rgba(0,0,0,0.08)",
-    backgroundColor: "#fff"
-  },
-  itemImage: {
-    flex: "0 0 120px",
-    marginRight: "20px",
-    borderRadius: "6px",
-    overflow: "hidden"
-  },
-  image: {
-    width: "100%",
-    height: "120px",
-    objectFit: "cover",
-    borderRadius: "6px"
-  },
-  itemDetails: {
-    flex: "1",
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "space-between"
-  },
-  itemName: {
-    fontSize: "1.4rem",
-    marginBottom: "5px",
-    color: "#333"
-  },
-  itemDescription: {
-    fontSize: "0.9rem",
-    color: "#666",
-    marginBottom: "10px",
-    maxHeight: "40px",
-    overflow: "hidden",
-    textOverflow: "ellipsis"
-  },
-  price: {
-    fontSize: "1.1rem",
-    color: "#ff4081",
-    marginBottom: "10px"
-  },
-  quantityControls: {
-    display: "flex",
-    alignItems: "center",
-    marginBottom: "15px"
-  },
-  quantityButton: {
-    background: "#f0f0f0",
-    color: "#333",
-    width: "30px",
-    height: "30px",
-    borderRadius: "50%",
-    border: "none",
-    fontSize: "1.2rem",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    cursor: "pointer"
-  },
-  quantity: {
-    padding: "0 15px",
-    fontSize: "1.1rem"
-  },
-  itemTotal: {
-    fontSize: "1.2rem",
-    fontWeight: "bold",
-    color: "#ff4081",
-    marginBottom: "10px"
-  },
-  removeButton: {
-    background: "transparent",
-    color: "#ff4081",
-    border: "1px solid #ff4081",
-    padding: "8px 15px",
-    borderRadius: "5px",
-    cursor: "pointer",
-    fontSize: "0.9rem",
-    alignSelf: "flex-start"
-  },
-  summary: {
-    padding: "20px",
-    backgroundColor: "#fff",
-    borderRadius: "8px",
-    boxShadow: "0 2px 10px rgba(0,0,0,0.08)",
-    marginTop: "20px"
-  },
-  total: {
-    fontSize: "1.8rem",
-    marginBottom: "20px",
-    color: "#333",
-    textAlign: "right"
-  },
-  checkout: {
-    background: "#ff4081",
-    color: "white",
-    border: "none",
-    padding: "15px 30px",
-    borderRadius: "5px",
-    cursor: "pointer",
-    fontSize: "1.2rem",
-    width: "100%",
-    fontWeight: "bold",
-    transition: "background 0.3s ease"
-  },
-  continueButton: {
-    background: "#ff4081",
-    color: "white",
-    border: "none",
-    padding: "12px 25px",
-    borderRadius: "5px",
-    cursor: "pointer",
-    fontSize: "1.1rem",
-    display: "block",
-    margin: "20px auto",
-    transition: "background 0.3s ease"
+    color: '#d32f2f',
+    marginBottom: '20px'
   },
   loginButton: {
-    background: "#ff4081",
-    color: "white",
-    border: "none",
-    padding: "12px 25px",
-    borderRadius: "5px",
-    cursor: "pointer",
-    fontSize: "1.1rem",
-    display: "block",
-    margin: "20px auto",
-    transition: "background 0.3s ease"
+    background: '#ff4081',
+    color: 'white',
+    border: 'none',
+    padding: '10px 20px',
+    borderRadius: '5px',
+    cursor: 'pointer'
   },
   successMessage: {
-    fontSize: "1.3rem",
-    color: "#43a047",
-    textAlign: "center",
-    margin: "20px 0"
+    color: '#43a047',
+    fontSize: '18px',
+    marginBottom: '20px'
+  },
+  quantityButton: {
+    border: '1px solid #ddd',
+    background: 'white',
+    width: '30px',
+    height: '30px',
+    borderRadius: '5px',
+    cursor: 'pointer',
+    margin: '0 5px'
+  },
+  quantityValue: {
+    padding: '0 10px'
+  },
+  removeButton: {
+    background: 'none',
+    border: 'none',
+    color: '#999',
+    cursor: 'pointer',
+    fontSize: '18px',
+    marginLeft: 'auto'
   }
 };
 

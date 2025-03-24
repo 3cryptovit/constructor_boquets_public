@@ -1,138 +1,70 @@
-🌸 Boquet Shop — Web-based Bouquet Builder
+# Getting Started with Create React App
 
-Boquet Shop is a modern web application for online flower bouquet creation and sales, allowing users to build the perfect bouquet for any occasion with an intuitive constructor, convenient catalog, and a cart with order processing.
-Project Features:
+This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
-Authentication & Registration
-- User registration.
-- Login using JWT tokens.
-- Cart and orders linked to each user.
+## Available Scripts
 
-Bouquet Constructor
-- Create and save custom bouquets.
-- Visual selection of flowers and packaging.
-- Drag-and-drop interface for bouquet components.
+In the project directory, you can run:
 
-Cart & Orders
-- Easy-to-use cart with saved items.
-- Checkout with order saved to the database.
+### `npm start`
 
-Catalog
-- A ready-to-use bouquet catalog.
-- Add to cart directly from catalog.
-- Modern animations and hover effects.
+Runs the app in the development mode.\
+Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
 
----
+The page will reload when you make changes.\
+You may also see any lint errors in the console.
 
-Technologies Used:
+### `npm test`
 
-Frontend:
-- React (Vite)
-- React Router DOM
-- Zustand (state management)
-- Modern CSS animations and styling
+Launches the test runner in the interactive watch mode.\
+See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
 
-Backend:
-- Node.js
-- Express.js
-- PostgreSQL
-- JWT-based authentication
+### `npm run build`
 
-Testing:
-- Jest
-- React Testing Library
+Builds the app for production to the `build` folder.\
+It correctly bundles React in production mode and optimizes the build for the best performance.
 
----
+The build is minified and the filenames include the hashes.\
+Your app is ready to be deployed!
 
-Running the Project:
+See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
 
-Frontend:
-```bash
-cd frontend
-npm install
-npm run dev
-```
+### `npm run eject`
 
-Backend:
-```bash
-cd backend
-npm install
-npm start
-```
+**Note: this is a one-way operation. Once you `eject`, you can't go back!**
 
-Project: `boquet_shop/`
-```
-boquet_shop/
-├── backend/                    # Server-side (Node.js + Express + PostgreSQL)
-│   ├── server.js              # Main entry point for the Express server
-│   ├── .env                   # Environment variables (DB credentials, PORT, etc.)
-│   ├── database/
-│   │   ├── db.js              # PostgreSQL connection setup
-│   │   ├── queries.js         # SQL queries for bouquets, flowers, etc.
-│   │   └── migrations/
-│   │       ├── init.sql       # SQL script to create all tables
-│   │       └── pg-migrate-config.js # Migration configuration
-│   ├── controllers/           # (optional) Separated route logic per module
-│   └── package.json           # Backend dependencies and scripts
-│
-├── frontend/                  # Client-side (React + Vite)
-│   ├── public/
-│   │   └── assets/            # Static images (flowers, bouquets, etc.)
-│   ├── src/
-│   │   ├── assets/            # Imported images and styles
-│   │   ├── components/        # Reusable UI components
-│   │   │   ├── Header.jsx     # Navigation bar with login/logout
-│   │   │   ├── Cart.jsx       # User's shopping cart
-│   │   │   ├── Catalog.jsx    # Bouquet catalog
-│   │   │   ├── Login.jsx      # Login form
-│   │   │   ├── Register.jsx   # Registration form
-│   │   │   ├── Contacts.jsx   # Contact information
-│   │   │   └── About.jsx      # About the project page
-│   │   ├── pages/
-│   │   │   └── Constructor.jsx# Bouquet constructor page
-│   │   ├── store/
-│   │   │   └── cartStore.js   # Zustand state management (e.g. cart state)
-│   │   ├── utils/             # Utility functions and API helpers
-│   │   ├── App.jsx            # Main application component with routing
-│   │   ├── main.jsx           # Entry point for React
-│   │   └── index.css          # Global styles
-│   └── package.json           # Frontend dependencies and scripts
-│
-├── infrastructure/            # DevOps and configuration files
-│   ├── docker-compose.yml     # Docker setup for backend + PostgreSQL
-│   └── .gitignore             # Git ignore rules
-│
-├── mobile/                    # (planned) Mobile version
-│   └── (React Native / Flutter in the future)
-│
-├── services/                  # (planned) Microservices (e.g. bouquet recommender AI)
-│
-├── tests/                     # Unit and end-to-end tests
-│   ├── Register.test.js       # Tests for registration logic
-│   └── Constructor.test.js    # Tests for bouquet builder
-│
-└── README.md                  # Project documentation
+If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
 
+Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
 
----
+You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
 
-What each folder does:
-| Folder | Purpose |
-| `backend/database` | Manages DB connections, migrations, and SQL logic |
-| `frontend/store` | Zustand-based state management (e.g. cart content) |
-| `frontend/pages` | React pages used for routing (`/constructor`, etc.) |
-| `frontend/components` | Reusable UI elements like login, header, catalog |
-| `services/` | Future microservices (e.g. neural bouquet recommender) |
-| `infrastructure/` | Docker config, Git rules, deployment-related files |
-| `mobile/` | Placeholder for future mobile app development |
+## Learn More
 
+You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
 
-Roadmap (Planned Features):
-- Mobile version of the application.
-- Advanced analytics on orders and user preferences.
+To learn React, check out the [React documentation](https://reactjs.org/).
 
----
+### Code Splitting
 
-License:
-This project is licensed under the MIT License.
+This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
 
+### Analyzing the Bundle Size
+
+This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+
+### Making a Progressive Web App
+
+This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+
+### Advanced Configuration
+
+This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+
+### Deployment
+
+This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+
+### `npm run build` fails to minify
+
+This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)

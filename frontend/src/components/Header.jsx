@@ -1,151 +1,120 @@
-import React, { useEffect, useState } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
-import useFavoritesStore from "../store/useFavoritesStore";
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import '../index.css';
 
-function Header() {
-  const [username, setUsername] = useState(null);
+const Header = () => {
+  const [user, setUser] = useState(null);
   const navigate = useNavigate();
-  const location = useLocation();
-  const { favorites } = useFavoritesStore();
 
-  // Функция для проверки авторизации
-  const checkAuth = () => {
-    const storedUser = localStorage.getItem("username");
+  useEffect(() => {
+    // Проверка авторизации при загрузке компонента
     const token = localStorage.getItem("token");
-    if (storedUser && storedUser !== "undefined" && token) {
-      setUsername(storedUser);
+    const username = localStorage.getItem("username");
+
+    console.log("Проверка авторизации:", { token, username });
+
+    if (token && username) {
+      setUser(username);
     } else {
-      setUsername(null);
+      // Если нет токена или имени, очищаем состояние пользователя
+      setUser(null);
     }
-  };
-
-  // Проверяем авторизацию при монтировании и изменении пути
-  useEffect(() => {
-    checkAuth();
-  }, [location.pathname]);
-
-  // Добавляем слушатель storage для синхронизации состояния между вкладками
-  useEffect(() => {
-    window.addEventListener('storage', checkAuth);
-
-    // Проверяем авторизацию каждый раз, когда компонент становится видимым
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible') {
-        checkAuth();
-      }
-    });
-
-    return () => {
-      window.removeEventListener('storage', checkAuth);
-      document.removeEventListener('visibilitychange', checkAuth);
-    };
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem("username");
     localStorage.removeItem("token");
+    localStorage.removeItem("username");
     localStorage.removeItem("userId");
-    setUsername(null);
-    navigate('/'); // Перенаправляем на главную страницу вместо перезагрузки
+    setUser(null);
+    navigate('/');
   };
 
-  return (
-    <header style={styles.header}>
-      <div>
-        <Link to="/" style={styles.logo}>🌸 Boquet Shop</Link>
-      </div>
-      <nav style={styles.nav}>
-        <div style={styles.navLinks}>
-          <Link to="/catalog" style={styles.link}>Каталог</Link>
-          <Link to="/constructor" style={styles.link}>Конструктор</Link>
-          <Link to="/favorites" style={styles.link}>
-            Избранное {favorites.length > 0 && <span style={styles.badge}>{favorites.length}</span>}
-          </Link>
-          <Link to="/cart" style={styles.link}>Корзина</Link>
-          <Link to="/contacts" style={styles.link}>Контакты</Link>
-          <Link to="/about" style={styles.link}>О нас</Link>
-        </div>
+  // Проверка состояния пользователя при рендеринге
+  console.log("Текущее состояние пользователя:", user);
 
-        <div style={styles.authSection}>
-          {username ? (
-            <>
-              <span style={styles.welcome}>Добро пожаловать, {username}!</span>
-              <button onClick={handleLogout} style={styles.logoutBtn}>Выйти</button>
-            </>
+  return (
+    <header className="site-header">
+      <div className="container" style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between'
+      }}>
+        <Link to="/" className="logo-container" style={{
+          display: 'flex',
+          alignItems: 'center',
+          textDecoration: 'none'
+        }}>
+          <img src="/assets/logo.svg" alt="Boquet Shop" className="logo" style={{ height: '40px' }} />
+          <span style={{
+            fontFamily: "'Playfair Display', serif",
+            fontSize: '24px',
+            fontWeight: '700',
+            color: '#333',
+            marginLeft: '10px',
+            whiteSpace: 'nowrap'
+          }}>
+            Boquet Shop
+          </span>
+        </Link>
+
+        <nav style={{
+          display: 'flex',
+          gap: '15px'
+        }}>
+          <Link to="/">
+            <button className="nav-button">Главная</button>
+          </Link>
+          <Link to="/catalog">
+            <button className="nav-button">Каталог</button>
+          </Link>
+          <Link to="/constructor">
+            <button className="nav-button">Конструктор</button>
+          </Link>
+          <Link to="/cart">
+            <button className="nav-button">Корзина</button>
+          </Link>
+        </nav>
+
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '15px'
+        }}>
+          {user ? (
+            <div style={{
+              color: 'var(--text-color)',
+              fontWeight: '500',
+              fontSize: '16px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px'
+            }}>
+              Добро пожаловать, {user}!
+              <button
+                onClick={handleLogout}
+                className="nav-button"
+                style={{
+                  padding: '5px 10px',
+                  fontSize: '14px'
+                }}
+              >
+                Выйти
+              </button>
+            </div>
           ) : (
             <>
-              <Link to="/login" style={styles.link}>Войти</Link>
-              <Link to="/register" style={styles.link}>Регистрация</Link>
+              <Link to="/login">
+                <button className="nav-button">Войти</button>
+              </Link>
+              <Link to="/register">
+                <button className="nav-button">Регистрация</button>
+              </Link>
             </>
           )}
         </div>
-      </nav>
+      </div>
     </header>
   );
-}
-
-const styles = {
-  header: {
-    display: "flex",
-    justifyContent: "space-between",
-    padding: "10px 20px",
-    background: "#ff4081",
-    color: "#fff"
-  },
-  logo: {
-    textDecoration: "none",
-    fontSize: "1.5rem",
-    color: "#fff"
-  },
-  nav: {
-    display: "flex",
-    alignItems: "center"
-  },
-  navLinks: {
-    display: "flex",
-    marginRight: "20px"
-  },
-  authSection: {
-    display: "flex",
-    alignItems: "center",
-    borderLeft: "1px solid rgba(255,255,255,0.3)",
-    paddingLeft: "15px"
-  },
-  link: {
-    textDecoration: "none",
-    marginLeft: "15px",
-    color: "#fff",
-    fontSize: "1.2rem"
-  },
-  welcome: {
-    marginLeft: "15px",
-    color: "#fff",
-    fontSize: "1.2rem"
-  },
-  logoutBtn: {
-    marginLeft: "15px",
-    background: "transparent",
-    border: "1px solid white",
-    borderRadius: "4px",
-    padding: "5px 10px",
-    color: "#fff",
-    fontSize: "1.2rem",
-    cursor: "pointer"
-  },
-  badge: {
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    background: "#ff4081",
-    color: "#fff",
-    borderRadius: "50%",
-    width: "18px",
-    height: "18px",
-    fontSize: "0.7rem",
-    position: "relative",
-    top: "-8px",
-    marginLeft: "3px"
-  }
 };
 
 export default Header;

@@ -1,126 +1,283 @@
-/* ✅ Общие стили */
-* {
+/* 🚀 Общий сброс стилей и базовые настройки */
+*,
+*::before,
+*::after {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  font-family: "Arial", sans-serif;
+}
+
+:root {
+  --main-font: 'Roboto', sans-serif;
+  --heading-font: 'Playfair Display', serif;
+  --primary-color: #ff5e7e;
+  --secondary-color: #ff4081;
+  --text-color: #333;
+  --light-bg: rgba(255, 255, 255, 0.95);
+  --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --transition: all 0.3s ease;
 }
 
 body {
-  background-color: #f8f8f8;
-  /* Светлый фон */
-  color: #333;
+  font-family: var(--main-font);
+  background-image: url('/assets/bg-bouquet.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  color: var(--text-color);
   line-height: 1.6;
+  padding-top: 80px;
+  /* Отступ под шапку */
 }
 
-/* ✅ Стили для контейнера */
+a,
+button {
+  transition: all 0.3s ease;
+  cursor: pointer;
+  color: inherit;
+  text-decoration: none;
+}
+
+a:hover,
+button:hover {
+  transform: scale(1.05);
+}
+
+/* 📌 Контейнеры */
 .container {
   max-width: 1200px;
   margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* 🖼️ Карточки */
+.card {
+  background-color: var(--light-bg);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: var(--transition);
+  box-shadow: var(--shadow);
   padding: 20px;
+  backdrop-filter: blur(4px);
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 25px rgba(0, 0, 0, 0.2);
+}
+
+.card img {
+  width: 100%;
+  height: 250px;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+  border-radius: 8px;
+}
+
+.card:hover img {
+  transform: scale(1.05);
+}
+
+/* 🌺 Кнопки */
+.btn {
+  background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  transition: var(--transition);
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.btn-outline {
+  background: transparent;
+  border: 2px solid var(--primary-color);
+  color: var(--primary-color);
+}
+
+.btn-outline:hover {
+  background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+  color: white;
+  border-color: transparent;
+}
+
+/* 🎨 Анимации */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.6s ease-in;
+}
+
+/* 📱 Адаптивность */
+@media (max-width: 768px) {
+  .container {
+    padding: 0 15px;
+  }
+
+  .card {
+    margin-bottom: 20px;
+  }
+
+  .card img {
+    height: 200px;
+  }
 }
 
 /* ✅ Стили для заголовков */
 h1,
 h2,
 h3 {
-  color: #222;
+  font-family: var(--heading-font);
+  color: var(--text-color);
   margin-bottom: 10px;
 }
 
-/* ✅ Стили кнопок */
-button {
-  padding: 10px 15px;
-  font-size: 16px;
-  border: none;
-  border-radius: 5px;
-  background-color: #ff4d79;
-  color: white;
-  cursor: pointer;
-  transition: 0.3s;
-}
-
-button:hover {
-  background-color: #e63e68;
-}
-
-/* ✅ Стили для ссылок */
-a {
-  color: #ff4d79;
-  text-decoration: none;
-}
-
-a:hover {
-  text-decoration: underline;
-}
-
 /* ✅ Стили для хедера */
-header {
-  background-color: #ff4d79;
-  padding: 15px;
-  text-align: center;
+.site-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
+  background-color: var(--light-bg);
+  box-shadow: var(--shadow);
+  padding: 10px 20px;
+  backdrop-filter: blur(4px);
+  transition: var(--transition);
+  height: 80px;
 }
 
 header a {
-  color: white;
+  color: #333;
   font-weight: bold;
   margin: 0 15px;
 }
 
-header a:hover {
-  text-decoration: underline;
+.logo-container {
+  display: flex;
+  align-items: center;
+  padding: 5px 10px;
 }
 
-/* ✅ Стили для конструктора */
-.constructor-container {
+.logo {
+  height: 60px;
+  transition: transform 0.3s ease;
+}
+
+.logo:hover {
+  transform: scale(1.05);
+  /* лёгкое увеличение при наведении */
+}
+
+/* Основной контент */
+.main-content {
+  min-height: calc(100vh - 80px);
+  padding: 20px 0;
+}
+
+/* ✅ Стили для героя */
+.hero {
   text-align: center;
+  color: #333;
+  padding: 60px 20px;
+  background: rgba(255, 255, 255, 0.8);
+  margin-bottom: 40px;
+  backdrop-filter: blur(5px);
+  border-radius: 0 0 20px 20px;
+  margin-top: 80px;
+  /* отступ под шапку */
+}
+
+.hero h1 {
+  font-size: 48px;
+  font-weight: bold;
+}
+
+.hero p {
+  font-size: 20px;
+  margin-top: 10px;
+  color: #555;
+}
+
+/* ✅ Стили для сетки букетов */
+.bouquet-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
   padding: 20px;
 }
 
-/* ✅ Сетка для букета */
-.bouquet-grid {
-  display: grid;
-  grid-template-columns: repeat(5, 50px);
-  gap: 10px;
-  justify-content: center;
-  margin-top: 20px;
+/* ✅ Кнопки входа/регистрации */
+.btn-auth {
+  border: 1px solid #ff5e7e;
+  background: transparent;
+  color: #ff5e7e;
+  padding: 8px 16px;
+  margin-left: 10px;
+  border-radius: 4px;
+  transition: 0.3s;
 }
 
-.bouquet-item {
-  width: 50px;
-  height: 50px;
-  background-color: #ddd;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid #aaa;
-  cursor: pointer;
+.btn-auth:hover {
+  background: #ff5e7e;
+  color: #fff;
 }
 
-.bouquet-item:hover {
-  background-color: #bbb;
+.btn-primary {
+  background-color: #ff4081;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 4px;
+  margin-left: 10px;
+  transition: 0.3s;
 }
 
-/* ✅ Выбор цветов */
-.flower-selection {
-  display: flex;
-  gap: 10px;
-  justify-content: center;
-  margin-top: 15px;
+.btn-primary:hover {
+  background-color: #e91e63;
+}
+
+/* ✅ Стили для конструктора */
+.constructor-wrapper {
+  background-color: rgba(255, 255, 255, 0.9);
+  padding: 30px;
+  border-radius: 12px;
+  max-width: 800px;
+  margin: auto;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
 }
 
 .flower-button {
+  background: var(--primary-color);
+  color: white;
+  border: 2px solid transparent;
+  border-radius: 12px;
   padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  background-color: white;
-  color: #333;
-  cursor: pointer;
+  transition: 0.2s ease-in-out;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
-.flower-button.selected {
-  background-color: #ffcccb;
+.flower-button:hover {
+  background: white;
+  color: var(--primary-color);
+  border: 2px solid var(--primary-color);
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 /* ✅ Стили для каталога */
@@ -154,11 +311,6 @@ header a:hover {
   padding: 20px;
   border-radius: 10px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-}
-
-.container {
-  text-align: center;
-  padding: 40px;
 }
 
 .form {
@@ -227,26 +379,27 @@ header a:hover {
 
 /* Стили для карточек букетов */
 .bouquet-card {
-  width: 250px;
-  border-radius: 10px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-  padding: 15px;
-  text-align: center;
   background: white;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
 }
 
 .bouquet-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 12px 25px rgba(0, 0, 0, 0.2);
 }
 
 .bouquet-image {
   width: 100%;
   height: 200px;
   object-fit: cover;
-  border-radius: 8px;
-  margin-bottom: 10px;
+  transition: transform 0.3s ease;
+}
+
+.bouquet-card:hover .bouquet-image {
+  transform: scale(1.05);
 }
 
 /* Страница деталей букета */
@@ -285,4 +438,172 @@ header a:hover {
   .bouquet-info {
     width: 50%;
   }
+}
+
+/* Улучшенный стиль для ползунка */
+input[type=range] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 10px;
+  background: linear-gradient(90deg, #f50057, #ff8a80);
+  border-radius: 10px;
+  outline: none;
+  transition: background 0.3s ease;
+}
+
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  background: #fff;
+  border: 2px solid #f50057;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s;
+}
+
+input[type=range]::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
+input[type=range]::-moz-range-track {
+  height: 10px;
+  background: linear-gradient(90deg, #f50057, #ff8a80);
+  border-radius: 10px;
+  outline: none;
+}
+
+input[type=range]::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  background: #fff;
+  border: 2px solid #f50057;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s;
+}
+
+input[type=range]::-moz-range-thumb:hover {
+  transform: scale(1.2);
+}
+
+/* Стили для навигационных ссылок */
+.nav-link {
+  display: inline-block;
+  padding: 8px 15px;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 8px;
+  margin: 0 5px;
+  color: var(--text-color);
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.nav-link:hover {
+  background-color: var(--accent-color);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Стили для кнопки "Сохранить букет" */
+.btn-save {
+  padding: 15px 30px;
+  font-size: 16px;
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.btn-save:hover {
+  background: var(--accent-color);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+}
+
+/* Стилизация ползунка выбора количества цветков */
+.flower-range-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 10px;
+  background: linear-gradient(to right, var(--accent-color), var(--primary-color));
+  outline: none;
+  border-radius: 10px;
+  margin: 10px 0;
+  transition: opacity 0.2s;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  border: none;
+}
+
+.flower-range-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: white;
+  border: 2px solid var(--accent-color);
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.flower-range-slider::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: white;
+  border: 2px solid var(--accent-color);
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.flower-range-slider::-webkit-slider-thumb:hover,
+.flower-range-slider::-moz-range-thumb:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.flower-range-slider:active::-webkit-slider-thumb,
+.flower-range-slider:active::-moz-range-thumb {
+  transform: scale(1.2);
+  background-color: var(--accent-color);
+  border-color: white;
+}
+
+/* Стили для навигационных кнопок */
+.nav-button {
+  background-color: #ff4081;
+  /* розовый */
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 15px;
+  margin: 0 5px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 8px rgba(255, 64, 129, 0.3);
+  cursor: pointer;
+}
+
+.nav-button:hover {
+  background-color: white;
+  color: black;
+  box-shadow: 0 0 12px rgba(255, 64, 129, 0.8);
+  /* сияние */
+  transform: translateY(-2px);
 }

@@ -17,6 +17,33 @@ CREATE TABLE IF NOT EXISTS bouquets (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Добавляем таблицу корзины
+CREATE TABLE IF NOT EXISTS cart (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER REFERENCES users(id),
+  bouquet_id INTEGER REFERENCES bouquets(id),
+  quantity INTEGER NOT NULL DEFAULT 1,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Добавляем таблицы для заказов
+CREATE TABLE IF NOT EXISTS orders (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER REFERENCES users(id),
+  total_price DECIMAL(10, 2) DEFAULT 0,
+  status VARCHAR(50) NOT NULL DEFAULT 'pending',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS order_items (
+  id SERIAL PRIMARY KEY,
+  order_id INTEGER REFERENCES orders(id),
+  bouquet_id INTEGER REFERENCES bouquets(id),
+  quantity INTEGER NOT NULL DEFAULT 1,
+  price DECIMAL(10, 2) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Проверяем наличие админа, если нет - создаем
 INSERT INTO users (username, password, role) 
 VALUES ('admin', '$2b$10$3JqfeJ0PG9O/EHlQzIpvBOXGxwf.BRa9K9L5Py3f.7HAJcQJU5PYG', 'admin')

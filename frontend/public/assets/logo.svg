@@ -1,0 +1,28 @@
+<svg width="300" height="80" viewBox="0 0 300 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .main-text {
+      font-family: 'Brush Script MT', cursive;
+      font-size: 36px;
+      fill: #f5ebe0;
+    }
+
+    .slogan {
+      font-family: 'Arial', sans-serif;
+      font-size: 14px;
+      fill: #f2c6c2;
+    }
+  </style>
+
+  <!-- Линия-стебель -->
+  <path d="M10 40 C30 20, 50 60, 80 40" stroke="#f2c6c2" stroke-width="1.5" fill="none"/>
+
+  <!-- Условный бутон -->
+  <circle cx="10" cy="40" r="5" fill="#f2c6c2"/>
+  <path d="M7 37 Q10 30, 13 37 Q10 35, 7 37 Z" fill="#e8a9a5"/>
+
+  <!-- Текст: название -->
+  <text x="90" y="50" class="main-text">Boquet Shop</text>
+
+  <!-- Текст: слоган -->
+  <text x="93" y="68" class="slogan">Цветы с душой</text>
+</svg>

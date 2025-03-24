@@ -25,6 +25,7 @@ CREATE TABLE bouquet_flowers (
     position_y INTEGER NOT NULL,  -- Y-координата цветка в букете
     color VARCHAR(50) NOT NULL  -- Цвет конкретного цветка
 );
+
 CREATE TABLE users (
     id SERIAL PRIMARY KEY,
     username VARCHAR(100) NOT NULL UNIQUE,

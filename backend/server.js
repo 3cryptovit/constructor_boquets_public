@@ -4,7 +4,7 @@ import pg from "pg";
 import dotenv from "dotenv";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import { getAllFlowers, createBouquet, addFlowerToBouquet, getBouquetComposition } from "./database/queries.js";
+import { getAllFlowers, createBouquet, addFlowerToBouquet, getBouquetComposition, getUserCart, addToCart, removeFromCart, createOrder, getUserOrders, addFlower, updateFlower, deleteFlower } from "./database/queries.js";
 
 dotenv.config();
 
@@ -15,7 +15,7 @@ const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key"; // Секрет�
 const pool = new pg.Pool({
   user: process.env.DB_USER || "postgres",
   host: process.env.DB_HOST || "localhost",
-  database: process.env.DB_NAME || "bouquet_db",
+  database: process.env.DB_NAME || "bouquet_DB",
   password: process.env.DB_PASSWORD || "", // 📌 Берём пароль из .env
   port: process.env.DB_PORT || 5432,
 });
@@ -65,14 +65,19 @@ app.get("/api/bouquets", async (req, res) => {
     const bouquets = await pool.query("SELECT * FROM bouquets");
 
     for (let bouquet of bouquets.rows) {
-      const flowers = await pool.query(
-        `SELECT bf.position_x, bf.position_y, bf.quantity, f.name, f.color, f.image_url 
-         FROM bouquet_flowers bf
-         JOIN flowers f ON bf.flower_id = f.id
-         WHERE bf.bouquet_id = $1`,
-        [bouquet.id]
-      );
-      bouquet.flowers = flowers.rows;
+      try {
+        const flowers = await pool.query(
+          `SELECT bf.quantity, f.name, f.color, f.image_url 
+           FROM bouquet_flowers bf
+           JOIN flowers f ON bf.flower_id = f.id
+           WHERE bf.bouquet_id = $1`,
+          [bouquet.id]
+        );
+        bouquet.flowers = flowers.rows;
+      } catch (flowerError) {
+        console.error("Ошибка загрузки цветов для букета:", flowerError);
+        bouquet.flowers = []; // Если произошла ошибка, устанавливаем пустой массив
+      }
 
       // Добавляем путь к изображению, если его нет
       if (!bouquet.image_url) {
@@ -105,15 +110,20 @@ app.get("/api/bouquets/:id", async (req, res) => {
     const bouquet = bouquetResult.rows[0];
 
     // Получаем цветы букета
-    const flowers = await pool.query(
-      `SELECT bf.position_x, bf.position_y, bf.quantity, f.name, f.color, f.image_url 
-       FROM bouquet_flowers bf
-       JOIN flowers f ON bf.flower_id = f.id
-       WHERE bf.bouquet_id = $1`,
-      [id]
-    );
+    try {
+      const flowers = await pool.query(
+        `SELECT bf.quantity, f.name, f.color, f.image_url 
+         FROM bouquet_flowers bf
+         JOIN flowers f ON bf.flower_id = f.id
+         WHERE bf.bouquet_id = $1`,
+        [id]
+      );
 
-    bouquet.flowers = flowers.rows;
+      bouquet.flowers = flowers.rows;
+    } catch (flowerError) {
+      console.error("Ошибка загрузки цветов для букета:", flowerError);
+      bouquet.flowers = []; // Если произошла ошибка, устанавливаем пустой массив
+    }
 
     // Добавляем путь к изображению, если его нет
     if (!bouquet.image_url) {
@@ -163,6 +173,14 @@ app.post("/order", async (req, res) => {
 app.get('/api/flowers', async (req, res) => {
   try {
     const flowers = await getAllFlowers();
+
+    // Добавляем пути к изображениям, если их нет
+    for (let flower of flowers) {
+      if (!flower.image_url) {
+        flower.image_url = `/assets/flowers/${flower.name.toLowerCase()}.png`;
+      }
+    }
+
     res.json(flowers);
   } catch (error) {
     console.error('Ошибка при получении цветов:', error);
@@ -171,19 +189,36 @@ app.get('/api/flowers', async (req, res) => {
 });
 
 // Создать новый букет
-app.post("/api/bouquets", async (req, res) => {
-  const { userId, name } = req.body;
+app.post("/api/bouquets", authenticateToken, async (req, res) => {
+  const { userId, name, description, price, image_url, circle_count, flower_count } = req.body;
 
   if (!userId || !name) {
     return res.status(400).json({ error: "Все поля обязательны" });
   }
 
   try {
-    const newBouquet = await pool.query(
-      "INSERT INTO bouquets (user_id, name, circle_count, flower_count) VALUES ($1, $2, 0, 0) RETURNING *",
-      [userId, name]
+    // Проверяем, что пользователь создает букет под своим ID
+    if (parseInt(userId) !== req.user.userId) {
+      return res.status(403).json({ error: "Доступ запрещен" });
+    }
+
+    // Создаем новый букет
+    const newBouquet = await createBouquet(
+      userId,
+      name,
+      description || "Красивый букет ручной работы",
+      circle_count || 0,
+      flower_count || 0,
+      image_url || "/assets/default_bouquet.webp"
     );
-    res.json(newBouquet.rows[0]);
+
+    // Сразу добавляем этот букет в корзину пользователя
+    await addToCart(userId, newBouquet.id, 1);
+
+    res.json({
+      message: "Букет создан и добавлен в корзину!",
+      bouquet: newBouquet
+    });
   } catch (error) {
     console.error("Ошибка создания букета:", error);
     res.status(500).json({ error: "Ошибка сервера при создании букета" });
@@ -191,34 +226,60 @@ app.post("/api/bouquets", async (req, res) => {
 });
 
 // Добавить цветок в букет
-app.post("/api/bouquets/:bouquetId/flowers", async (req, res) => {
+app.post("/api/bouquets/:bouquetId/flowers", authenticateToken, async (req, res) => {
   try {
     const { bouquetId } = req.params;
-    const { flowerId, positionX, positionY, color } = req.body;
+    const { flowerId, positionX, positionY, color, quantity } = req.body;
 
     if (!flowerId || positionX === undefined || positionY === undefined || !color) {
       return res.status(400).json({ error: "Все поля обязательны" });
     }
 
-    // Добавляем цветок в букет
-    await pool.query(
-      `INSERT INTO bouquet_flowers (bouquet_id, flower_id, position_x, position_y, color) 
-       VALUES ($1, $2, $3, $4, $5)`,
-      [bouquetId, flowerId, positionX, positionY, color]
+    // Проверяем, что пользователь добавляет цветок в свой букет
+    const bouquet = await pool.query("SELECT user_id FROM bouquets WHERE id = $1", [bouquetId]);
+
+    if (bouquet.rows.length === 0) {
+      return res.status(404).json({ error: "Букет не найден" });
+    }
+
+    if (bouquet.rows[0].user_id !== req.user.userId) {
+      return res.status(403).json({ error: "Доступ запрещен" });
+    }
+
+    // Проверяем, существует ли уже цветок в этой позиции
+    const existingFlower = await pool.query(
+      `SELECT * FROM bouquet_flowers 
+       WHERE bouquet_id = $1 AND position_x = $2 AND position_y = $3`,
+      [bouquetId, positionX, positionY]
     );
 
-    // Пересчитываем количество цветов в букете
+    if (existingFlower.rows.length > 0) {
+      return res.status(409).json({ error: "В этой позиции уже есть цветок" });
+    }
+
+    // Добавляем цветок в букет
+    const newFlower = await addFlowerToBouquet(
+      bouquetId,
+      flowerId,
+      positionX,
+      positionY,
+      color,
+      quantity || 1
+    );
+
+    // Обновляем количество цветов в букете
     await pool.query(
-      `UPDATE bouquets SET flower_count = (
-        SELECT COUNT(*) FROM bouquet_flowers WHERE bouquet_id = $1
-      ) WHERE id = $1`,
+      `UPDATE bouquets SET flower_count = flower_count + 1 WHERE id = $1`,
       [bouquetId]
     );
 
-    res.json({ message: "Цветок добавлен!" });
+    res.json({
+      message: "Цветок добавлен в букет",
+      flower: newFlower
+    });
   } catch (error) {
-    console.error("Ошибка при добавлении цветка:", error);
-    res.status(500).json({ error: "Внутренняя ошибка сервера" });
+    console.error("Ошибка добавления цветка в букет:", error);
+    res.status(500).json({ error: "Ошибка сервера при добавлении цветка" });
   }
 });
 
@@ -336,239 +397,106 @@ app.post("/api/login", async (req, res) => {
 });
 
 // Получить корзину пользователя
-app.get("/api/cart/:userId", authenticateToken, async (req, res) => {
-  const { userId } = req.params;
-
-  // Проверяем, что пользователь запрашивает свою корзину
-  if (parseInt(userId) !== req.user.userId) {
-    return res.status(403).json({ error: "Доступ запрещен" });
-  }
-
+app.get("/api/cart", authenticateToken, async (req, res) => {
   try {
-    // Получаем содержимое корзины с детальной информацией о букетах
-    const cartItems = await pool.query(
-      `SELECT c.id, c.bouquet_id, c.quantity, b.name, b.price, b.image_url, b.description
-       FROM cart c
-       JOIN bouquets b ON c.bouquet_id = b.id
-       WHERE c.user_id = $1`,
-      [userId]
-    );
+    const userId = req.user.userId;
+    const cartItems = await getUserCart(userId);
 
-    // Добавляем изображения, если их нет
-    for (let item of cartItems.rows) {
-      if (!item.image_url) {
-        item.image_url = `/assets/boquet_${item.bouquet_id}.webp`;
-      }
-    }
-
-    res.json(cartItems.rows);
+    res.json(cartItems);
   } catch (error) {
     console.error("Ошибка получения корзины:", error);
-    res.status(500).json({ error: "Ошибка сервера" });
+    res.status(500).json({ error: "Ошибка сервера при получении корзины" });
   }
 });
 
-// Добавить букет в корзину
+// Добавить товар в корзину
 app.post("/api/cart", authenticateToken, async (req, res) => {
-  const { userId, bouquetId, quantity } = req.body;
-
-  // Проверяем, что пользователь добавляет в свою корзину
-  if (parseInt(userId) !== req.user.userId) {
-    return res.status(403).json({ error: "Доступ запрещен" });
-  }
-
   try {
-    // Сначала проверяем, существует ли букет
-    const bouquetCheck = await pool.query("SELECT id FROM bouquets WHERE id = $1", [bouquetId]);
+    const { bouquetId, quantity } = req.body;
+    const userId = req.user.userId;
 
-    if (bouquetCheck.rows.length === 0) {
-      return res.status(404).json({ error: "Букет не найден в базе данных" });
+    if (!bouquetId || !quantity) {
+      return res.status(400).json({ error: "Все поля обязательны" });
     }
 
-    // Проверяем, есть ли уже такой букет в корзине
-    const existingItem = await pool.query(
-      `SELECT c.*, b.price 
-       FROM cart c 
-       JOIN bouquets b ON c.bouquet_id = b.id 
-       WHERE c.user_id = $1 AND c.bouquet_id = $2`,
-      [userId, bouquetId]
-    );
+    const cartItem = await addToCart(userId, bouquetId, quantity);
 
-    if (existingItem.rows.length > 0) {
-      // Обновляем количество, если букет уже в корзине
-      await pool.query(
-        "UPDATE cart SET quantity = quantity + $1 WHERE user_id = $2 AND bouquet_id = $3",
-        [quantity, userId, bouquetId]
-      );
-    } else {
-      // Добавляем новый букет в корзину
-      await pool.query(
-        "INSERT INTO cart (user_id, bouquet_id, quantity) VALUES ($1, $2, $3)",
-        [userId, bouquetId, quantity]
-      );
-    }
-
-    res.status(201).json({ message: "Букет добавлен в корзину" });
+    res.json({
+      message: "Товар добавлен в корзину",
+      item: cartItem
+    });
   } catch (error) {
     console.error("Ошибка добавления в корзину:", error);
-    res.status(500).json({ error: "Ошибка сервера" });
+    res.status(500).json({ error: "Ошибка сервера при добавлении в корзину" });
   }
 });
 
-// Обновить количество букета в корзине
-app.put("/api/cart/:cartItemId", authenticateToken, async (req, res) => {
-  const { cartItemId } = req.params;
-  const { quantity } = req.body;
-
+// Удалить товар из корзины
+app.delete("/api/cart/:bouquetId", authenticateToken, async (req, res) => {
   try {
-    // Проверяем, что элемент корзины принадлежит пользователю
-    const cartItem = await pool.query(
-      "SELECT * FROM cart WHERE id = $1",
-      [cartItemId]
-    );
+    const { bouquetId } = req.params;
+    const userId = req.user.userId;
 
-    if (cartItem.rows.length === 0) {
-      return res.status(404).json({ error: "Элемент корзины не найден" });
+    const removedItem = await removeFromCart(userId, bouquetId);
+
+    if (!removedItem) {
+      return res.status(404).json({ error: "Товар не найден в корзине" });
     }
 
-    if (cartItem.rows[0].user_id !== req.user.userId) {
-      return res.status(403).json({ error: "Доступ запрещен" });
-    }
-
-    // Обновляем количество
-    await pool.query(
-      "UPDATE cart SET quantity = $1 WHERE id = $2",
-      [quantity, cartItemId]
-    );
-
-    res.json({ message: "Количество обновлено" });
-  } catch (error) {
-    console.error("Ошибка обновления корзины:", error);
-    res.status(500).json({ error: "Ошибка сервера" });
-  }
-});
-
-// Удалить букет из корзины
-app.delete("/api/cart/:cartItemId", authenticateToken, async (req, res) => {
-  const { cartItemId } = req.params;
-
-  try {
-    // Проверяем, что элемент корзины принадлежит пользователю
-    const cartItem = await pool.query(
-      "SELECT * FROM cart WHERE id = $1",
-      [cartItemId]
-    );
-
-    if (cartItem.rows.length === 0) {
-      return res.status(404).json({ error: "Элемент корзины не найден" });
-    }
-
-    if (cartItem.rows[0].user_id !== req.user.userId) {
-      return res.status(403).json({ error: "Доступ запрещен" });
-    }
-
-    // Удаляем элемент
-    await pool.query("DELETE FROM cart WHERE id = $1", [cartItemId]);
-
-    res.json({ message: "Букет удален из корзины" });
+    res.json({
+      message: "Товар удален из корзины",
+      item: removedItem
+    });
   } catch (error) {
     console.error("Ошибка удаления из корзины:", error);
-    res.status(500).json({ error: "Ошибка сервера" });
+    res.status(500).json({ error: "Ошибка сервера при удалении из корзины" });
   }
 });
 
 // Оформить заказ
 app.post("/api/orders", authenticateToken, async (req, res) => {
-  const { userId } = req.body;
-
-  // Проверяем, что пользователь оформляет свой заказ
-  if (parseInt(userId) !== req.user.userId) {
-    return res.status(403).json({ error: "Доступ запрещен" });
-  }
-
   try {
-    // Начинаем транзакцию
-    await pool.query('BEGIN');
+    const userId = req.user.userId;
 
-    // Создаем заказ
-    const orderResult = await pool.query(
-      "INSERT INTO orders (user_id, created_at) VALUES ($1, NOW()) RETURNING id",
-      [userId]
-    );
-    const orderId = orderResult.rows[0].id;
+    // Получаем содержимое корзины
+    const cartItems = await getUserCart(userId);
 
-    // Получаем товары из корзины пользователя
-    const cartItems = await pool.query(
-      "SELECT bouquet_id, quantity FROM cart WHERE user_id = $1",
-      [userId]
-    );
+    if (cartItems.length === 0) {
+      return res.status(400).json({ error: "Корзина пуста" });
+    }
 
-    // Добавляем товары в заказ
-    for (const item of cartItems.rows) {
-      await pool.query(
-        "INSERT INTO order_items (order_id, bouquet_id, quantity) VALUES ($1, $2, $3)",
-        [orderId, item.bouquet_id, item.quantity]
-      );
+    // Создаем заказы для каждого букета в корзине
+    const orders = [];
+
+    for (const item of cartItems) {
+      const totalPrice = item.price * item.quantity;
+      const order = await createOrder(userId, item.bouquet_id, totalPrice);
+      orders.push(order);
     }
 
     // Очищаем корзину
     await pool.query("DELETE FROM cart WHERE user_id = $1", [userId]);
 
-    // Завершаем транзакцию
-    await pool.query('COMMIT');
-
-    res.status(201).json({
+    res.json({
       message: "Заказ успешно оформлен",
-      orderId
+      orders: orders
     });
   } catch (error) {
-    // Откатываем транзакцию в случае ошибки
-    await pool.query('ROLLBACK');
     console.error("Ошибка оформления заказа:", error);
-    res.status(500).json({ error: "Ошибка сервера" });
+    res.status(500).json({ error: "Ошибка сервера при оформлении заказа" });
   }
 });
 
-// Получить историю заказов пользователя
-app.get("/api/orders/:userId", authenticateToken, async (req, res) => {
-  const { userId } = req.params;
-
-  // Проверяем, что пользователь запрашивает свои заказы
-  if (parseInt(userId) !== req.user.userId) {
-    return res.status(403).json({ error: "Доступ запрещен" });
-  }
-
+// Получить заказы пользователя
+app.get("/api/orders", authenticateToken, async (req, res) => {
   try {
-    // Получаем все заказы пользователя
-    const orders = await pool.query(
-      `SELECT o.id, o.created_at,
-       (SELECT COUNT(*) FROM order_items WHERE order_id = o.id) as items_count,
-       (SELECT SUM(oi.quantity * b.price) 
-        FROM order_items oi 
-        JOIN bouquets b ON oi.bouquet_id = b.id 
-        WHERE oi.order_id = o.id) as total_price
-       FROM orders o
-       WHERE o.user_id = $1
-       ORDER BY o.created_at DESC`,
-      [userId]
-    );
+    const userId = req.user.userId;
+    const orders = await getUserOrders(userId);
 
-    // Для каждого заказа добавляем детали (товары)
-    for (const order of orders.rows) {
-      const orderItems = await pool.query(
-        `SELECT oi.quantity, b.id as bouquet_id, b.name, b.price
-         FROM order_items oi
-         JOIN bouquets b ON oi.bouquet_id = b.id
-         WHERE oi.order_id = $1`,
-        [order.id]
-      );
-      order.items = orderItems.rows;
-    }
-
-    res.json(orders.rows);
+    res.json(orders);
   } catch (error) {
     console.error("Ошибка получения заказов:", error);
-    res.status(500).json({ error: "Ошибка сервера" });
+    res.status(500).json({ error: "Ошибка сервера при получении заказов" });
   }
 });
 
@@ -637,6 +565,74 @@ app.get("/api/users", authenticateToken, isAdmin, async (req, res) => {
     res.status(500).json({ error: "Ошибка сервера" });
   }
 }); // ✅ Закрываем app.get
+
+// Добавить новый цветок (только для админов)
+app.post('/api/flowers', authenticateToken, isAdmin, async (req, res) => {
+  try {
+    const { name, color, price, popularity, image_url } = req.body;
+
+    if (!name || !color || !price) {
+      return res.status(400).json({ error: 'Необходимо указать название, цвет и цену цветка' });
+    }
+
+    const newFlower = await addFlower(name, color, price, popularity || 0, image_url);
+
+    res.status(201).json({
+      message: "Цветок успешно добавлен",
+      flower: newFlower
+    });
+  } catch (error) {
+    console.error('Ошибка при добавлении цветка:', error);
+    res.status(500).json({ error: 'Внутренняя ошибка сервера' });
+  }
+});
+
+// Обновить цветок (только для админов)
+app.put('/api/flowers/:id', authenticateToken, isAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, color, price, popularity, image_url } = req.body;
+
+    if (!name || !color || !price) {
+      return res.status(400).json({ error: 'Необходимо указать название, цвет и цену цветка' });
+    }
+
+    const updatedFlower = await updateFlower(id, name, color, price, popularity || 0, image_url);
+
+    if (!updatedFlower) {
+      return res.status(404).json({ error: 'Цветок не найден' });
+    }
+
+    res.json({
+      message: "Цветок успешно обновлен",
+      flower: updatedFlower
+    });
+  } catch (error) {
+    console.error('Ошибка при обновлении цветка:', error);
+    res.status(500).json({ error: 'Внутренняя ошибка сервера' });
+  }
+});
+
+// Удалить цветок (только для админов)
+app.delete('/api/flowers/:id', authenticateToken, isAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const deletedFlower = await deleteFlower(id);
+
+    if (!deletedFlower) {
+      return res.status(404).json({ error: 'Цветок не найден' });
+    }
+
+    res.json({
+      message: "Цветок успешно удален",
+      flower: deletedFlower
+    });
+  } catch (error) {
+    console.error('Ошибка при удалении цветка:', error);
+    res.status(500).json({ error: 'Внутренняя ошибка сервера' });
+  }
+});
 
 // 📌 Запуск сервера (вне всех маршрутов)
 app.listen(port, () => {

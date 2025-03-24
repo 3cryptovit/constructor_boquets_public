@@ -1,13 +1,16 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import FlowerCounter from "../components/FlowerCounter";
+import FlowerSelector from "../components/FlowerSelector";
+import BouquetConstructor from "../components/BouquetConstructor";
 
 const Constructor = () => {
-  const [flowers, setFlowers] = useState([]); // Доступные цветы
-  const [selectedFlower, setSelectedFlower] = useState(null); // Выбранный цветок
-  const [bouquet, setBouquet] = useState([]); // Состав букета
-  const [bouquetId, setBouquetId] = useState(null); // ID созданного букета
-  const [bouquetName, setBouquetName] = useState("Мой букет");
+  const [totalFlowers, setTotalFlowers] = useState(1);
+  const [selectedFlower, setSelectedFlower] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [bouquetName, setBouquetName] = useState("Мой букет");
+  const [bouquetDescription, setBouquetDescription] = useState("Красивый букет ручной работы");
+  const [bouquetPrice, setBouquetPrice] = useState(3500);
   const navigate = useNavigate();
 
   // Проверка авторизации
@@ -23,37 +26,42 @@ const Constructor = () => {
     }
   }, [navigate]);
 
-  // Загружаем цветы с backend
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetch("http://localhost:5000/api/flowers")
-        .then((response) => response.json())
-        .then((data) => setFlowers(data))
-        .catch((error) => console.error("Ошибка загрузки цветов:", error));
+  const saveBouquet = async () => {
+    if (!selectedFlower) {
+      alert("Добавьте хотя бы один цветок в букет!");
+      return;
     }
-  }, [isAuthenticated]);
 
-  // Создаём новый букет
-  const createNewBouquet = async () => {
-    const userId = localStorage.getItem("userId"); // Берём userId из локального хранилища
+    const userId = localStorage.getItem("userId");
+    const token = localStorage.getItem("token");
 
-    if (!userId) {
+    if (!userId || !token) {
       alert("Ошибка: сначала войдите в аккаунт!");
+      navigate("/login");
       return;
     }
 
     try {
       const response = await fetch("http://localhost:5000/api/bouquets", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, name: bouquetName }),
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          userId,
+          name: bouquetName,
+          description: bouquetDescription,
+          price: bouquetPrice,
+          image_url: "/assets/custom_bouquet.webp"
+        }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        alert("✅ Букет создан!");
-        setBouquetId(data.id);
+        alert(`✅ Букет "${bouquetName}" успешно создан и добавлен в корзину!`);
+        navigate("/cart");
       } else {
         alert(`❌ Ошибка: ${data.error}`);
       }
@@ -63,162 +71,88 @@ const Constructor = () => {
     }
   };
 
-  // Добавляем цветок в букет
-  const addFlowerToBouquet = async (positionX, positionY) => {
-    if (!selectedFlower) {
-      alert("Сначала выберите цветок!");
-      return;
-    }
-
-    if (!bouquetId) {
-      alert("Сначала создайте букет!");
-      return;
-    }
-
-    try {
-      const response = await fetch(`http://localhost:5000/api/bouquets/${bouquetId}/flowers`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          flowerId: selectedFlower.id,
-          positionX,
-          positionY,
-          color: selectedFlower.color,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Ошибка при добавлении цветка");
-      }
-
-      setBouquet([...bouquet, { ...selectedFlower, positionX, positionY }]);
-    } catch (error) {
-      console.error("Ошибка:", error);
-      alert("Не удалось добавить цветок: " + error.message);
-    }
+  const appStyle = {
+    backgroundColor: '#f5f5f5',
+    minHeight: 'calc(100vh - 60px)', // Учитываем Header
+    margin: 0,
+    padding: 0,
   };
 
-  // Очистить букет
-  const clearBouquet = () => {
-    setBouquet([]);
-    setBouquetId(null);
-    alert("Букет очищен!");
+  const contentStyle = {
+    padding: '2rem',
   };
 
-  // Сохранить букет в каталог
-  const saveBouquet = async () => {
-    if (!bouquetId) {
-      alert("Сначала создайте букет!");
-      return;
-    }
-
-    if (bouquet.length === 0) {
-      alert("Букет пуст! Добавьте хотя бы один цветок.");
-      return;
-    }
-
-    alert(`Букет "${bouquetName}" успешно сохранен в каталог!`);
+  const formStyle = {
+    display: "flex",
+    flexDirection: "column",
+    maxWidth: "500px",
+    margin: "0 auto",
+    gap: "10px",
+    marginBottom: "20px"
   };
 
   return (
-    <div style={{ textAlign: "center", padding: "20px" }}>
-      <h1>Конструктор букета</h1>
+    <div style={appStyle}>
+      <div style={contentStyle}>
+        <h1 style={{ textAlign: "center" }}>Конструктор букета</h1>
 
-      {/* Ввод названия и создание букета */}
-      <div style={{ marginBottom: "20px" }}>
-        <input
-          type="text"
-          value={bouquetName}
-          onChange={(e) => setBouquetName(e.target.value)}
-          placeholder="Название букета"
-          style={{ padding: "8px", marginRight: "10px" }}
-        />
-        <button
-          onClick={createNewBouquet}
-          disabled={bouquetId !== null}
-          style={{
-            padding: "8px 16px",
-            backgroundColor: bouquetId ? "#cccccc" : "#4CAF50",
-            color: "white",
-            border: "none",
-            borderRadius: "4px"
-          }}
-        >
-          {bouquetId ? "Букет создан!" : "Создать новый букет"}
-        </button>
-      </div>
-
-      {/* Выбор цветка */}
-      <h2>Выберите цветок:</h2>
-      <div style={{ display: "flex", gap: "10px", justifyContent: "center", flexWrap: "wrap", marginBottom: "20px" }}>
-        {flowers.map((flower) => (
-          <button
-            key={flower.id}
-            onClick={() => setSelectedFlower(flower)}
-            style={{
-              padding: "10px",
-              backgroundColor: selectedFlower?.id === flower.id ? "lightgray" : "white",
-              border: "1px solid #ccc",
-              borderRadius: "4px"
-            }}
-          >
-            {flower.name} ({flower.color})
-          </button>
-        ))}
-      </div>
-
-      {/* Сетка для букета */}
-      <h2>Ваш букет:</h2>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 50px)", gap: "10px", justifyContent: "center", marginBottom: "20px" }}>
-        {Array.from({ length: 10 }).map((_, index) => {
-          const flowerInPosition = bouquet.find((f) => f.positionX === index % 5 && f.positionY === Math.floor(index / 5));
-          return (
-            <div
-              key={index}
-              style={{
-                width: "50px",
-                height: "50px",
-                backgroundColor: flowerInPosition ? flowerInPosition.color : "lightgray",
-                borderRadius: "50%",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                cursor: selectedFlower && bouquetId ? "pointer" : "default",
-              }}
-              onClick={() => addFlowerToBouquet(index % 5, Math.floor(index / 5))}
-            >
-              {flowerInPosition ? flowerInPosition.name[0] : "+"}
+        {isAuthenticated && (
+          <>
+            {/* Форма для названия и описания букета */}
+            <div style={formStyle}>
+              <input
+                type="text"
+                value={bouquetName}
+                onChange={(e) => setBouquetName(e.target.value)}
+                placeholder="Название букета"
+                style={{ padding: "8px" }}
+              />
+              <textarea
+                value={bouquetDescription}
+                onChange={(e) => setBouquetDescription(e.target.value)}
+                placeholder="Описание букета"
+                style={{ padding: "8px", height: "60px" }}
+              />
+              <div style={{ display: "flex", alignItems: "center" }}>
+                <label style={{ marginRight: "10px" }}>Цена: </label>
+                <input
+                  type="number"
+                  value={bouquetPrice}
+                  onChange={(e) => setBouquetPrice(Number(e.target.value))}
+                  min="1000"
+                  style={{ padding: "8px", width: "100px" }}
+                />
+                <span style={{ marginLeft: "5px" }}>₽</span>
+              </div>
             </div>
-          );
-        })}
-      </div>
 
-      {/* Кнопки управления букетом */}
-      <div style={{ display: "flex", gap: "10px", justifyContent: "center" }}>
-        <button
-          onClick={saveBouquet}
-          style={{
-            padding: "10px 20px",
-            backgroundColor: "#2196F3",
-            color: "white",
-            border: "none",
-            borderRadius: "4px"
-          }}
-        >
-          Сохранить букет
-        </button>
-        <button
-          onClick={clearBouquet}
-          style={{
-            padding: "10px 20px",
-            backgroundColor: "#f44336",
-            color: "white",
-            border: "none",
-            borderRadius: "4px"
-          }}
-        >
-          Очистить букет
-        </button>
+            {/* Компоненты конструктора */}
+            <FlowerCounter onCountChange={setTotalFlowers} />
+            <FlowerSelector onFlowerSelect={setSelectedFlower} />
+            <BouquetConstructor
+              totalFlowers={totalFlowers}
+              selectedFlower={selectedFlower}
+            />
+
+            {/* Кнопка сохранения букета */}
+            <div style={{ textAlign: "center", marginTop: "20px" }}>
+              <button
+                onClick={saveBouquet}
+                style={{
+                  padding: "10px 20px",
+                  backgroundColor: "#4CAF50",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "4px",
+                  fontSize: "16px",
+                  cursor: "pointer"
+                }}
+              >
+                Сохранить букет и добавить в корзину
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
