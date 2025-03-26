@@ -5,6 +5,29 @@ import dotenv from "dotenv";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { getAllFlowers, createBouquet, addFlowerToBouquet, getBouquetComposition, getUserCart, addToCart, removeFromCart, createOrder, getUserOrders, addFlower, updateFlower, deleteFlower } from "./database/queries.js";
+import multer from "multer";
+import fs from "fs";
+import path from "path";
+import authRoutes from "./routes/auth.js";
+
+// Создаем директорию для загрузки файлов, если она не существует
+if (!fs.existsSync('./uploads')) {
+  fs.mkdirSync('./uploads', { recursive: true });
+}
+
+// Настраиваем хранилище для загрузки файлов
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, './uploads/');
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + '-' + file.originalname);
+  }
+});
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 5 * 1024 * 1024 } // Увеличиваем до 5MB
+});
 
 dotenv.config();
 
@@ -26,6 +49,9 @@ app.use(cors({
   credentials: true,
 }));
 app.use(express.json());
+
+// Подключаем маршруты аутентификации
+app.use("/api/auth", authRoutes);
 
 // Middleware для проверки JWT-токена
 const authenticateToken = (req, res, next) => {
@@ -453,33 +479,82 @@ app.delete("/api/cart/:bouquetId", authenticateToken, async (req, res) => {
   }
 });
 
-// Оформить заказ
+// API для оформления заказа через корзину
 app.post("/api/orders", authenticateToken, async (req, res) => {
   try {
+    console.log("Получен запрос на оформление заказа:", req.body);
+    console.log("Пользователь из токена:", req.user);
+    const { items } = req.body;
+    // Используем userId из токена
     const userId = req.user.userId;
 
-    // Получаем содержимое корзины
-    const cartItems = await getUserCart(userId);
+    console.log(`Используется userId из токена: ${userId}`);
 
-    if (cartItems.length === 0) {
+    if (!userId) {
+      console.error("userId отсутствует в токене!");
+      return res.status(403).json({ error: "Не удалось определить ID пользователя" });
+    }
+
+    // Проверка наличия предметов в заказе
+    if (!items || items.length === 0) {
       return res.status(400).json({ error: "Корзина пуста" });
     }
 
-    // Создаем заказы для каждого букета в корзине
-    const orders = [];
+    // Создаем заказ
+    // Проверяем наличие колонки created_at
+    const checkColumn = await pool.query(`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name='orders' AND column_name='created_at'
+    `);
 
-    for (const item of cartItems) {
-      const totalPrice = item.price * item.quantity;
-      const order = await createOrder(userId, item.bouquet_id, totalPrice);
-      orders.push(order);
+    let orderResult;
+    if (checkColumn.rows.length > 0) {
+      // Если колонка существует, используем ее
+      orderResult = await pool.query(
+        `INSERT INTO orders (user_id, status, created_at) 
+         VALUES ($1, 'pending', NOW()) RETURNING id`,
+        [userId]
+      );
+    } else {
+      // Если колонки нет, вставляем без нее
+      orderResult = await pool.query(
+        `INSERT INTO orders (user_id, status) 
+         VALUES ($1, 'pending') RETURNING id`,
+        [userId]
+      );
     }
 
-    // Очищаем корзину
+    const orderId = orderResult.rows[0].id;
+    let totalPrice = 0;
+
+    // Добавляем товары в заказ
+    for (const item of items) {
+      const itemPrice = parseFloat(item.price);
+      const itemQuantity = parseInt(item.quantity);
+      const itemTotal = itemPrice * itemQuantity;
+      totalPrice += itemTotal;
+
+      await pool.query(
+        `INSERT INTO order_items (order_id, bouquet_id, quantity, price) 
+         VALUES ($1, $2, $3, $4)`,
+        [orderId, item.id, itemQuantity, itemPrice]
+      );
+    }
+
+    // Обновляем общую стоимость заказа
+    await pool.query(
+      "UPDATE orders SET total_price = $1 WHERE id = $2",
+      [totalPrice, orderId]
+    );
+
+    // Очищаем корзину пользователя
     await pool.query("DELETE FROM cart WHERE user_id = $1", [userId]);
 
-    res.json({
+    res.status(201).json({
       message: "Заказ успешно оформлен",
-      orders: orders
+      orderId,
+      totalPrice
     });
   } catch (error) {
     console.error("Ошибка оформления заказа:", error);
@@ -634,7 +709,22 @@ app.delete('/api/flowers/:id', authenticateToken, isAdmin, async (req, res) => {
   }
 });
 
-// 📌 Запуск сервера (вне всех маршрутов)
+// Импортируем маршруты админа
+import adminRoutes from "./routes/admin.js";
+
+// Добавляем маршруты админа
+app.use("/api/admin", adminRoutes);
+
+// Добавляем статические маршруты для загруженных файлов
+app.use("/uploads", express.static("uploads"));
+
+// Запускаем сервер
 app.listen(port, () => {
-  console.log(`✅ Сервер запущен на http://localhost:${port}`);
+  console.log('\n============================');
+  console.log(`🚀 Сервер запущен на порту ${port}`);
+  console.log(`📂 Директория проекта: ${process.cwd()}`);
+  console.log(`🌐 API доступно по адресу: http://localhost:${port}`);
+  console.log(`📊 ENV: ${process.env.NODE_ENV || 'development'}`);
+  console.log('============================\n');
 });
+

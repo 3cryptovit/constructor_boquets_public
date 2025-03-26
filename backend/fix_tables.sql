@@ -10,6 +10,17 @@ BEGIN
   END IF;
 END $$;
 
+-- Добавление email в таблицу users, если его нет
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'users' AND column_name = 'email'
+  ) THEN
+    ALTER TABLE users ADD COLUMN email TEXT;
+  END IF;
+END $$;
+
 -- bouquet_flowers: position_x
 ALTER TABLE IF EXISTS bouquet_flowers
     ADD COLUMN IF NOT EXISTS position_x INTEGER;

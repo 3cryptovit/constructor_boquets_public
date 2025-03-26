@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../index.css';
+import formatImageUrl from "../utils/imageUrl";
 
 // Прямые пути к изображениям цветов в public
 const flowerImages = {
@@ -258,35 +259,29 @@ const Constructor = () => {
 
   const calculatePriceDetails = () => {
     const details = {};
-    let total = 0;
+    let totalPrice = 0;
 
     cells.forEach(cell => {
       if (cell.flower) {
-        const { id, name, price } = cell.flower;
-        // Используем id цветка как уникальный ключ
-        const key = id.toString();
-
-        if (!details[key]) {
-          details[key] = {
-            name: name,
+        const flowerName = cell.flower.name;
+        if (!details[flowerName]) {
+          details[flowerName] = {
             count: 1,
-            pricePerFlower: price,
-            totalPrice: price
+            pricePerFlower: cell.flower.price,
+            totalPrice: cell.flower.price
           };
         } else {
-          details[key].count++;
-          details[key].totalPrice = details[key].count * details[key].pricePerFlower; // Исправленный расчет стоимости
+          details[flowerName].count++;
+          details[flowerName].totalPrice = details[flowerName].count * details[flowerName].pricePerFlower;
         }
+        totalPrice += cell.flower.price;
       }
     });
 
-    // Пересчитываем общую стоимость как сумму всех totalPrice
-    total = Object.values(details).reduce((sum, detail) => sum + detail.totalPrice, 0);
-
-    return { details, total };
+    return { details, totalPrice };
   };
 
-  const { details, total } = calculatePriceDetails();
+  const { details, totalPrice } = calculatePriceDetails();
 
   // Функция для добавления букета в корзину
   const addToCart = async () => {
@@ -308,7 +303,7 @@ const Constructor = () => {
       const bouquetData = {
         name: prompt.trim() || 'Букет без названия',
         description: `Букет из ${Object.values(details).map(d => `${d.name} (${d.count} шт.)`).join(', ')}`,
-        price: total,
+        price: totalPrice,
         image_url: '/assets/custom-bouquet.jpg', // Заглушка для изображения
         flowers: cells.filter(cell => cell.flower).map(cell => ({
           flower_id: cell.flower.id,
@@ -635,7 +630,9 @@ const Constructor = () => {
                 >
                   {cell.flower && (
                     <img
-                      src={cell.flower.image_url || flowerImages[cell.flower.name] || `/assets/flowers/${cell.flower.id}.png`}
+                      src={cell.flower.image_url
+                        ? formatImageUrl(cell.flower.image_url)
+                        : flowerImages[cell.flower.name] || `/assets/flowers/${cell.flower.id}.png`}
                       alt={cell.flower.name}
                       title=""
                       style={{
@@ -698,7 +695,7 @@ const Constructor = () => {
                 fontWeight: 'bold',
                 textAlign: 'right'
               }}>
-                Общая стоимость: {total} ₽
+                Общая стоимость: {totalPrice} ₽
               </div>
             </div>
           </div>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import formatImageUrl from "../utils/imageUrl";
 
 function Cart() {
   const [cart, setCart] = useState([]);
@@ -107,11 +108,20 @@ function Cart() {
     if (newQuantity < 1) return;
 
     const token = localStorage.getItem("token");
+    const userId = localStorage.getItem("userId");
 
-    if (!token) {
+    if (!token || !userId) {
       setError("Требуется авторизация");
       return;
     }
+
+    // Оптимистичное обновление UI
+    setCart(prevCart => prevCart.map(item => {
+      if (item.id === cartItemId) {
+        return { ...item, quantity: newQuantity };
+      }
+      return item;
+    }));
 
     fetch(`http://localhost:5000/api/cart/${cartItemId}`, {
       method: "PUT",
@@ -119,21 +129,23 @@ function Cart() {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({ quantity: newQuantity })
+      body: JSON.stringify({
+        userId: userId,
+        quantity: newQuantity
+      })
     })
       .then(res => {
         if (!res.ok) {
+          // Откатываем изменения в UI при ошибке
+          setCart(prevCart => prevCart.map(item => {
+            if (item.id === cartItemId) {
+              return { ...item, quantity: item.quantity };
+            }
+            return item;
+          }));
           throw new Error("Ошибка обновления количества");
         }
         return res.json();
-      })
-      .then(() => {
-        setCart(cart.map(item => {
-          if (item.id === cartItemId) {
-            return { ...item, quantity: newQuantity };
-          }
-          return item;
-        }));
       })
       .catch(error => {
         console.error("Ошибка обновления:", error);
@@ -178,12 +190,12 @@ function Cart() {
     const userId = localStorage.getItem("userId");
 
     if (!token || !userId) {
-      setError("Требуется авторизация");
+      setError("Для оформления заказа необходимо войти в систему");
       return;
     }
 
-    const hasItems = cart.length > 0 || customCart.length > 0;
-    if (!hasItems) {
+    // Проверяем, что хотя бы одна из корзин не пуста
+    if (cart.length === 0 && customCart.length === 0) {
       setError("Корзина пуста");
       return;
     }
@@ -191,11 +203,28 @@ function Cart() {
     // Объединяем данные корзины с сервера и из localStorage
     const allCartItems = [
       ...cart,
-      ...customCart.map(item => ({
-        ...item,
-        isCustom: true
-      }))
+      ...customCart.map(item => {
+        // Защита от undefined в описании букета
+        if (item.description && item.description.includes('undefined')) {
+          item.description = item.description.replace(/undefined \(\d+ шт\.\)/g, 'Разные цветы')
+            .replace(/, undefined \(\d+ шт\.\)/g, '');
+        }
+        return {
+          ...item,
+          isCustom: true
+        };
+      })
     ];
+
+    console.log("Отправляем заказ на сервер:", {
+      items: allCartItems
+    });
+
+    // Выводим заголовки для дебага
+    console.log("Заголовки запроса:", {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    });
 
     fetch("http://localhost:5000/api/orders", {
       method: "POST",
@@ -204,17 +233,23 @@ function Cart() {
         'Authorization': `Bearer ${token}`
       },
       body: JSON.stringify({
-        userId,
         items: allCartItems
       })
     })
       .then(res => {
+        console.log("Статус ответа:", res.status);
+        // Выводим подробности об ошибке
         if (!res.ok) {
-          throw new Error("Ошибка оформления заказа");
+          console.error(`Ошибка ${res.status}: ${res.statusText}`);
+          return res.json().then(err => {
+            console.error("Подробности ошибки:", err);
+            throw new Error(err.error || "Ошибка оформления заказа");
+          });
         }
         return res.json();
       })
       .then(data => {
+        console.log("Заказ успешно оформлен:", data);
         // Очищаем корзину
         setCart([]);
         setCustomCart([]);
@@ -227,7 +262,7 @@ function Cart() {
       })
       .catch(error => {
         console.error("Ошибка оформления заказа:", error);
-        setError("Не удалось оформить заказ");
+        setError(error.message || "Не удалось оформить заказ");
       });
   };
 
@@ -322,7 +357,7 @@ function Cart() {
                   boxShadow: '0 2px 5px rgba(0, 0, 0, 0.05)'
                 }}>
                   <img
-                    src={item.image_url || '/assets/default-bouquet.jpg'}
+                    src={formatImageUrl(item.image_url, '/assets/default-bouquet.jpg')}
                     alt={item.name}
                     style={{
                       width: '120px',
@@ -383,7 +418,7 @@ function Cart() {
                   border: '1px dashed var(--primary-color)'
                 }}>
                   <img
-                    src={item.image_url || '/assets/custom-bouquet.jpg'}
+                    src={formatImageUrl(item.image_url, '/assets/custom-bouquet.jpg')}
                     alt={item.name}
                     style={{
                       width: '120px',

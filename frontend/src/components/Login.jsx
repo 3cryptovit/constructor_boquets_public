@@ -28,7 +28,7 @@ function Login() {
     setLoading(true);
     setError("");
 
-    fetch("http://localhost:5000/api/login", {
+    fetch("http://localhost:5000/api/auth/login", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -44,9 +44,10 @@ function Login() {
       .then(data => {
         // Сохраняем данные в localStorage
         localStorage.setItem("token", data.token);
-        localStorage.setItem("userId", data.userId);
-        localStorage.setItem("username", data.username);
-        localStorage.setItem("userRole", data.role || "user"); // Сохраняем роль пользователя
+        localStorage.setItem("userId", data.user.id);
+        localStorage.setItem("username", data.user.username);
+        localStorage.setItem("userRole", data.user.role || "user"); // Сохраняем роль пользователя
+        localStorage.setItem("user", JSON.stringify(data.user)); // Сохраняем весь объект пользователя
 
         // Перенаправляем на главную страницу
         navigate("/");

@@ -11,7 +11,7 @@ import Contacts from "./components/Contacts";
 import About from "./components/About";
 import BouquetDetails from "./pages/BouquetDetails";
 import Favorites from "./components/Favorites";
-import Admin from "./components/Admin";
+import AdminPanel from "./pages/Admin/AdminPanel";
 
 function App() {
   return (
@@ -28,7 +28,7 @@ function App() {
           <Route path="/contacts" element={<Contacts />} />
           <Route path="/about" element={<About />} />
           <Route path="/constructor" element={<Constructor />} />
-          <Route path="/admin" element={<Admin />} />
+          <Route path="/admin" element={<AdminPanel />} />
         </Routes>
       </Layout>
     </Router>

@@ -11,6 +11,7 @@ const Register = () => {
     confirmPassword: ''
   });
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     setFormData({
@@ -21,13 +22,22 @@ const Register = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setError('');
 
+    // Проверяем совпадение паролей
     if (formData.password !== formData.confirmPassword) {
       setError('Пароли не совпадают');
+      setLoading(false);
       return;
     }
 
     try {
+      console.log('Отправка запроса на регистрацию:', {
+        username: formData.username,
+        email: formData.email
+      });
+
       const response = await fetch('http://localhost:5000/api/auth/register', {
         method: 'POST',
         headers: {
@@ -41,15 +51,26 @@ const Register = () => {
       });
 
       const data = await response.json();
+      console.log('Ответ сервера:', data);
 
       if (!response.ok) {
         throw new Error(data.message || 'Ошибка при регистрации');
       }
 
-      // Успешная регистрация
-      navigate('/login');
+      // Успешная регистрация - вход в систему
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("userId", data.user.id);
+      localStorage.setItem("username", data.user.username);
+      localStorage.setItem("userRole", data.user.role || "user");
+      localStorage.setItem("user", JSON.stringify(data.user));
+
+      alert('Регистрация успешна! Вы будете перенаправлены на главную страницу.');
+      navigate('/');
     } catch (err) {
-      setError(err.message);
+      console.error('Ошибка регистрации:', err);
+      setError(err.message || 'Произошла ошибка при регистрации. Пожалуйста, попробуйте снова.');
+    } finally {
+      setLoading(false);
     }
   };
 

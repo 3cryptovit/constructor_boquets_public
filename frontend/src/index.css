@@ -155,11 +155,10 @@ h3 {
   left: 0;
   width: 100%;
   z-index: 1000;
-  background-color: var(--light-bg);
-  box-shadow: var(--shadow);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(5px);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
   padding: 10px 20px;
-  backdrop-filter: blur(4px);
-  transition: var(--transition);
   height: 80px;
 }
 
@@ -357,24 +356,24 @@ header a {
 }
 
 .welcome {
-  margin-left: 15px;
-  font-size: 1rem;
-  font-weight: bold;
-  color: #fff;
+  font-size: 14px;
+  color: #333;
 }
 
 .logout-btn {
-  background-color: #ff4081;
-  color: white;
-  border: none;
-  padding: 8px 12px;
-  margin-left: 10px;
-  cursor: pointer;
-  border-radius: 5px;
+  background: white;
+  color: #ff4081;
+  border: 2px solid #ff4081;
+  padding: 5px 10px;
+  border-radius: 8px;
+  font-weight: bold;
+  transition: 0.3s;
 }
 
 .logout-btn:hover {
-  background-color: #e63e68;
+  background: #ff4081;
+  color: white;
+  box-shadow: 0 0 10px rgba(255, 64, 129, 0.3);
 }
 
 /* Стили для карточек букетов */
@@ -587,23 +586,39 @@ input[type=range]::-moz-range-thumb:hover {
 /* Стили для навигационных кнопок */
 .nav-button {
   background-color: #ff4081;
-  /* розовый */
   color: white;
   border: none;
-  padding: 10px 20px;
-  border-radius: 10px;
-  font-weight: 600;
-  font-size: 15px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 14px;
   margin: 0 5px;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 8px rgba(255, 64, 129, 0.3);
-  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(255, 64, 129, 0.2);
 }
 
 .nav-button:hover {
   background-color: white;
-  color: black;
-  box-shadow: 0 0 12px rgba(255, 64, 129, 0.8);
-  /* сияние */
+  color: #ff4081;
+  border: 1px solid #ff4081;
+  box-shadow: 0 0 12px rgba(255, 64, 129, 0.3);
   transform: translateY(-2px);
+}
+
+/* Стили для элементов управления пользователя */
+.user-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+}
+
+.nav-button.admin-button {
+  background-color: #ff4081;
+  color: white;
+  border: none;
+}
+
+.nav-button.admin-button:hover {
+  background-color: #f50057;
 }

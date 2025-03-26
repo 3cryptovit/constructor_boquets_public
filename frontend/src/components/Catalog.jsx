@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import useCartStore from "../store/useCartStore";
 import useFavoritesStore from "../store/useFavoritesStore";
+import formatImageUrl from "../utils/imageUrl";
 
 function Catalog() {
   const { addToCart } = useCartStore();
@@ -177,7 +178,7 @@ function Catalog() {
                 borderRadius: '8px'
               }}>
                 <img
-                  src={bouquet.image_url}
+                  src={formatImageUrl(bouquet.image_url)}
                   alt={bouquet.name}
                   style={{
                     position: 'absolute',
@@ -239,6 +240,19 @@ function Catalog() {
               </div>
             </div>
           ))}
+        </div>
+
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          marginTop: '40px'
+        }}>
+          <button
+            className="nav-button"
+            onClick={() => navigate('/constructor')}
+          >
+            Перейти в конструктор
+          </button>
         </div>
       </div>
     </div>

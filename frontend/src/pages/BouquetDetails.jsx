@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import useFavoritesStore from "../store/useFavoritesStore";
+import formatImageUrl from "../utils/imageUrl";
 
 function BouquetDetails() {
   const [bouquet, setBouquet] = useState(null);
@@ -144,7 +145,7 @@ function BouquetDetails() {
       <div style={styles.content}>
         <div style={styles.imageContainer}>
           <img
-            src={displayBouquet.image_url || "https://via.placeholder.com/500x500?text=Bouquet"}
+            src={formatImageUrl(displayBouquet.image_url, "https://via.placeholder.com/500x500?text=Bouquet")}
             alt={displayBouquet.name}
             style={styles.image}
           />

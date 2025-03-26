@@ -2,6 +2,7 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import useFavoritesStore from "../store/useFavoritesStore";
 import useCartStore from "../store/useCartStore";
+import formatImageUrl from "../utils/imageUrl";
 
 function Favorites() {
   const { favorites, removeFromFavorites } = useFavoritesStore();
@@ -76,7 +77,7 @@ function Favorites() {
                 <div
                   style={{
                     ...styles.cardImage,
-                    backgroundImage: `url('${bouquet.image_url || "https://via.placeholder.com/300x300?text=Bouquet"}')`
+                    backgroundImage: `url('${formatImageUrl(bouquet.image_url, "https://via.placeholder.com/300x300?text=Bouquet")}')`
                   }}
                 >
                   <div style={styles.price}>{bouquet.price} ₽</div>

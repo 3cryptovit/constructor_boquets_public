@@ -4,33 +4,43 @@ import '../index.css';
 
 const Header = () => {
   const [user, setUser] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    // Проверка авторизации при загрузке компонента
+  const checkAuth = () => {
     const token = localStorage.getItem("token");
     const username = localStorage.getItem("username");
-
-    console.log("Проверка авторизации:", { token, username });
+    const userRole = localStorage.getItem("userRole");
 
     if (token && username) {
       setUser(username);
+      setIsAdmin(userRole === 'admin');
     } else {
-      // Если нет токена или имени, очищаем состояние пользователя
       setUser(null);
+      setIsAdmin(false);
     }
+  };
+
+  useEffect(() => {
+    checkAuth();
+    // Добавляем слушатель события storage для синхронизации между вкладками
+    window.addEventListener('storage', checkAuth);
+    return () => window.removeEventListener('storage', checkAuth);
   }, []);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("username");
     localStorage.removeItem("userId");
+    localStorage.removeItem("userRole");
+    localStorage.removeItem("user");
     setUser(null);
+    setIsAdmin(false);
     navigate('/');
   };
 
   // Проверка состояния пользователя при рендеринге
-  console.log("Текущее состояние пользователя:", user);
+  console.log("Текущее состояние пользователя:", user, "Администратор:", isAdmin);
 
   return (
     <header className="site-header">
@@ -73,6 +83,14 @@ const Header = () => {
           <Link to="/cart">
             <button className="nav-button">Корзина</button>
           </Link>
+          <Link to="/about">
+            <button className="nav-button">О нас</button>
+          </Link>
+          {isAdmin && (
+            <Link to="/admin">
+              <button className="nav-button admin-button">Админ-панель</button>
+            </Link>
+          )}
         </nav>
 
         <div style={{
@@ -81,22 +99,23 @@ const Header = () => {
           gap: '15px'
         }}>
           {user ? (
-            <div style={{
-              color: 'var(--text-color)',
-              fontWeight: '500',
-              fontSize: '16px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px'
-            }}>
-              Добро пожаловать, {user}!
+            <div className="user-controls">
+              <span className="welcome">Добро пожаловать, {user}!</span>
+              {isAdmin && (
+                <span className="admin-badge" style={{
+                  background: '#ff4081',
+                  color: 'white',
+                  padding: '4px 8px',
+                  borderRadius: '4px',
+                  fontSize: '12px',
+                  marginLeft: '8px'
+                }}>
+                  Администратор
+                </span>
+              )}
               <button
                 onClick={handleLogout}
-                className="nav-button"
-                style={{
-                  padding: '5px 10px',
-                  fontSize: '14px'
-                }}
+                className="logout-btn"
               >
                 Выйти
               </button>
