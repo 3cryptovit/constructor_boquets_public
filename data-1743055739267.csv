@@ -1,0 +1,49 @@
+"table_name","column_name","data_type","character_maximum_length","is_nullable","column_default"
+"bouquet_flowers","bouquet_id","integer",NULL,"NO",NULL
+"bouquet_flowers","flower_id","integer",NULL,"NO",NULL
+"bouquet_flowers","position_x","integer",NULL,"NO",NULL
+"bouquet_flowers","position_y","integer",NULL,"NO",NULL
+"bouquet_flowers","color","character varying",50,"YES",NULL
+"bouquet_flowers","quantity","integer",NULL,"YES","1"
+"bouquets","id","integer",NULL,"NO","nextval('bouquets_id_seq'::regclass)"
+"bouquets","name","character varying",100,"NO",NULL
+"bouquets","description","text",NULL,"YES",NULL
+"bouquets","circle_count","integer",NULL,"YES",NULL
+"bouquets","flower_count","integer",NULL,"YES",NULL
+"bouquets","image_url","text",NULL,"YES",NULL
+"bouquets","user_id","integer",NULL,"YES",NULL
+"bouquets","created_at","timestamp without time zone",NULL,"YES","CURRENT_TIMESTAMP"
+"bouquets","price","numeric",NULL,"YES",NULL
+"cart","id","integer",NULL,"NO","nextval('cart_id_seq'::regclass)"
+"cart","user_id","integer",NULL,"YES",NULL
+"cart","bouquet_id","integer",NULL,"YES",NULL
+"cart","quantity","integer",NULL,"YES","1"
+"favorites","id","integer",NULL,"NO","nextval('favorites_id_seq'::regclass)"
+"favorites","user_id","integer",NULL,"YES",NULL
+"favorites","bouquet_id","integer",NULL,"YES",NULL
+"flowers","id","integer",NULL,"NO","nextval('flowers_id_seq'::regclass)"
+"flowers","name","character varying",100,"NO",NULL
+"flowers","color","character varying",50,"YES",NULL
+"flowers","price","numeric",NULL,"YES",NULL
+"flowers","popularity","integer",NULL,"YES",NULL
+"flowers","image_url","text",NULL,"YES",NULL
+"order_items","id","integer",NULL,"NO","nextval('order_items_id_seq'::regclass)"
+"order_items","order_id","integer",NULL,"YES",NULL
+"order_items","bouquet_id","integer",NULL,"YES",NULL
+"order_items","quantity","integer",NULL,"YES",NULL
+"orders","id","integer",NULL,"NO","nextval('orders_id_seq'::regclass)"
+"orders","user_id","integer",NULL,"YES",NULL
+"orders","bouquet_id","integer",NULL,"YES",NULL
+"orders","total_price","numeric",NULL,"YES",NULL
+"orders","order_date","timestamp without time zone",NULL,"YES","CURRENT_TIMESTAMP"
+"orders","status","character varying",20,"YES","'pending'::character varying"
+"orders","created_at","timestamp without time zone",NULL,"YES","now()"
+"pgmigrations","id","integer",NULL,"NO","nextval('pgmigrations_id_seq'::regclass)"
+"pgmigrations","name","character varying",255,"NO",NULL
+"pgmigrations","run_on","timestamp without time zone",NULL,"NO",NULL
+"users","id","integer",NULL,"NO","nextval('users_id_seq'::regclass)"
+"users","username","character varying",50,"NO",NULL
+"users","password","text",NULL,"NO",NULL
+"users","created_at","timestamp without time zone",NULL,"YES","CURRENT_TIMESTAMP"
+"users","role","text",NULL,"YES","'user'::text"
+"users","email","character varying",255,"YES",NULL

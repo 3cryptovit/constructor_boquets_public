@@ -253,29 +253,36 @@ const BouquetConstructor = ({ totalFlowers, selectedFlower }) => {
   };
 
   const calculatePriceDetails = () => {
-    const basePrice = 1000; // Базовая стоимость букета
-    const pricePerFlower = 350; // Стоимость за один цветок
+    const details = {};
+    let basePrice = 1000; // Базовая стоимость букета
 
-    // Считаем количество установленных цветов
-    const flowersCount = cells.filter(cell => cell.flower).length;
-
-    // Считаем разбивку цен по типам цветов
-    const flowersCounts = {};
     cells.forEach(cell => {
       if (cell.flower) {
-        flowersCounts[cell.flower] = (flowersCounts[cell.flower] || 0) + 1;
+        const flowerName = cell.flower.name;
+        if (!details[flowerName]) {
+          details[flowerName] = {
+            name: flowerName,
+            count: 1,
+            pricePerFlower: cell.flower.price,
+            totalPrice: cell.flower.price
+          };
+        } else {
+          details[flowerName].count++;
+          details[flowerName].totalPrice = details[flowerName].count * details[flowerName].pricePerFlower;
+        }
       }
     });
 
-    // Формируем детали цены
+    const flowerDetails = Object.values(details).map(detail => ({
+      flowerType: detail.name,
+      count: detail.count,
+      price: detail.totalPrice
+    }));
+
     return {
       basePrice,
-      flowerDetails: Object.entries(flowersCounts).map(([flowerType, count]) => ({
-        flowerType,
-        count,
-        price: count * pricePerFlower
-      })),
-      totalPrice: basePrice + (flowersCount * pricePerFlower)
+      flowerDetails,
+      totalPrice: basePrice + flowerDetails.reduce((sum, detail) => sum + detail.price, 0)
     };
   };
 

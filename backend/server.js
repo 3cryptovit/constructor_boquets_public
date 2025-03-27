@@ -80,6 +80,27 @@ const isAdmin = (req, res, next) => {
   }
 };
 
+// Функция безопасного логирования
+const safeLog = (message, data) => {
+  if (process.env.NODE_ENV !== "production") {
+    if (data) {
+      console.log(message, data);
+    } else {
+      console.log(message);
+    }
+  }
+};
+
+// Функция логирования ошибок
+const logError = (message, error) => {
+  // Ошибки логируем всегда, но в production убираем детали
+  if (process.env.NODE_ENV === "production") {
+    console.error(message);
+  } else {
+    console.error(message, error);
+  }
+};
+
 // 📌 Главная страница сервера
 app.get("/", (req, res) => {
   res.send("Boquet Shop Backend работает!");
@@ -101,7 +122,7 @@ app.get("/api/bouquets", async (req, res) => {
         );
         bouquet.flowers = flowers.rows;
       } catch (flowerError) {
-        console.error("Ошибка загрузки цветов для букета:", flowerError);
+        logError("Ошибка загрузки цветов для букета:", flowerError);
         bouquet.flowers = []; // Если произошла ошибка, устанавливаем пустой массив
       }
 
@@ -113,7 +134,7 @@ app.get("/api/bouquets", async (req, res) => {
 
     res.json(bouquets.rows);
   } catch (error) {
-    console.error("Ошибка получения букетов:", error);
+    logError("Ошибка получения букетов:", error);
     res.status(500).json({ error: "Ошибка сервера" });
   }
 });
@@ -147,7 +168,7 @@ app.get("/api/bouquets/:id", async (req, res) => {
 
       bouquet.flowers = flowers.rows;
     } catch (flowerError) {
-      console.error("Ошибка загрузки цветов для букета:", flowerError);
+      logError("Ошибка загрузки цветов для букета:", flowerError);
       bouquet.flowers = []; // Если произошла ошибка, устанавливаем пустой массив
     }
 
@@ -158,7 +179,7 @@ app.get("/api/bouquets/:id", async (req, res) => {
 
     res.json(bouquet);
   } catch (error) {
-    console.error("Ошибка получения букета:", error);
+    logError("Ошибка получения букета:", error);
     res.status(500).json({ error: "Ошибка сервера" });
   }
 });
@@ -190,7 +211,7 @@ app.post("/order", async (req, res) => {
 
     res.status(201).json({ message: "Заказ успешно оформлен", orderId });
   } catch (error) {
-    console.error("Ошибка оформления заказа:", error);
+    logError("Ошибка оформления заказа:", error);
     res.status(500).json({ error: "Ошибка сервера" });
   }
 });
@@ -209,7 +230,7 @@ app.get('/api/flowers', async (req, res) => {
 
     res.json(flowers);
   } catch (error) {
-    console.error('Ошибка при получении цветов:', error);
+    logError('Ошибка при получении цветов:', error);
     res.status(500).json({ error: 'Внутренняя ошибка сервера' });
   }
 });
@@ -246,7 +267,7 @@ app.post("/api/bouquets", authenticateToken, async (req, res) => {
       bouquet: newBouquet
     });
   } catch (error) {
-    console.error("Ошибка создания букета:", error);
+    logError("Ошибка создания букета:", error);
     res.status(500).json({ error: "Ошибка сервера при создании букета" });
   }
 });
@@ -304,7 +325,7 @@ app.post("/api/bouquets/:bouquetId/flowers", authenticateToken, async (req, res)
       flower: newFlower
     });
   } catch (error) {
-    console.error("Ошибка добавления цветка в букет:", error);
+    logError("Ошибка добавления цветка в букет:", error);
     res.status(500).json({ error: "Ошибка сервера при добавлении цветка" });
   }
 });
@@ -316,7 +337,7 @@ app.get('/api/bouquets/:bouquetId/flowers', async (req, res) => {
     const composition = await getBouquetComposition(bouquetId);
     res.json(composition);
   } catch (error) {
-    console.error('Ошибка при получении состава букета:', error);
+    logError('Ошибка при получении состава букета:', error);
     res.status(500).json({ error: 'Внутренняя ошибка сервера' });
   }
 });
@@ -341,7 +362,7 @@ app.delete("/api/bouquets/:bouquetId/flowers/:flowerId", async (req, res) => {
 
     res.json({ message: "Цветок удалён!" });
   } catch (error) {
-    console.error("Ошибка при удалении цветка:", error);
+    logError("Ошибка при удалении цветка:", error);
     res.status(500).json({ error: "Внутренняя ошибка сервера" });
   }
 });
@@ -373,7 +394,7 @@ app.post("/api/register", async (req, res) => {
 
     res.status(201).json({ message: "Регистрация успешна!", user: newUser.rows[0] });
   } catch (error) {
-    console.error("Ошибка регистрации:", error);
+    logError("Ошибка регистрации:", error);
     res.status(500).json({ error: "Ошибка сервера" });
   }
 });
@@ -417,7 +438,7 @@ app.post("/api/login", async (req, res) => {
       token: token
     });
   } catch (error) {
-    console.error("Ошибка аутентификации:", error);
+    logError("Ошибка аутентификации:", error);
     res.status(500).json({ error: "Ошибка сервера" });
   }
 });
@@ -430,7 +451,7 @@ app.get("/api/cart", authenticateToken, async (req, res) => {
 
     res.json(cartItems);
   } catch (error) {
-    console.error("Ошибка получения корзины:", error);
+    logError("Ошибка получения корзины:", error);
     res.status(500).json({ error: "Ошибка сервера при получении корзины" });
   }
 });
@@ -452,7 +473,7 @@ app.post("/api/cart", authenticateToken, async (req, res) => {
       item: cartItem
     });
   } catch (error) {
-    console.error("Ошибка добавления в корзину:", error);
+    logError("Ошибка добавления в корзину:", error);
     res.status(500).json({ error: "Ошибка сервера при добавлении в корзину" });
   }
 });
@@ -474,24 +495,95 @@ app.delete("/api/cart/:bouquetId", authenticateToken, async (req, res) => {
       item: removedItem
     });
   } catch (error) {
-    console.error("Ошибка удаления из корзины:", error);
+    logError("Ошибка удаления из корзины:", error);
     res.status(500).json({ error: "Ошибка сервера при удалении из корзины" });
+  }
+});
+
+// Удалить товар из корзины по ID записи (для более гибкого удаления)
+app.delete("/api/cart/item/:id", authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.userId;
+
+    // Проверяем, что элемент корзины принадлежит пользователю
+    const cartItemCheck = await pool.query(
+      "SELECT * FROM cart WHERE id = $1 AND user_id = $2",
+      [id, userId]
+    );
+
+    if (cartItemCheck.rows.length === 0) {
+      return res.status(404).json({ error: "Товар не найден в корзине" });
+    }
+
+    // Удаляем элемент корзины
+    const result = await pool.query(
+      "DELETE FROM cart WHERE id = $1 RETURNING *",
+      [id]
+    );
+
+    res.json({
+      message: "Товар удален из корзины",
+      item: result.rows[0]
+    });
+  } catch (error) {
+    logError("Ошибка удаления из корзины:", error);
+    res.status(500).json({ error: "Ошибка сервера при удалении из корзины" });
+  }
+});
+
+// Обновить количество товара в корзине
+app.put("/api/cart/item/:id", authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { quantity } = req.body;
+    const userId = req.user.userId;
+
+    if (!quantity || quantity < 1) {
+      return res.status(400).json({ error: "Количество должно быть положительным числом" });
+    }
+
+    // Проверяем, что элемент корзины принадлежит пользователю
+    const cartItemCheck = await pool.query(
+      "SELECT * FROM cart WHERE id = $1 AND user_id = $2",
+      [id, userId]
+    );
+
+    if (cartItemCheck.rows.length === 0) {
+      return res.status(404).json({ error: "Товар не найден в корзине" });
+    }
+
+    // Обновляем количество
+    const result = await pool.query(
+      "UPDATE cart SET quantity = $1 WHERE id = $2 RETURNING *",
+      [quantity, id]
+    );
+
+    res.json({
+      message: "Количество товара обновлено",
+      item: result.rows[0]
+    });
+  } catch (error) {
+    logError("Ошибка обновления количества:", error);
+    res.status(500).json({ error: "Ошибка сервера при обновлении количества" });
   }
 });
 
 // API для оформления заказа через корзину
 app.post("/api/orders", authenticateToken, async (req, res) => {
+  const client = await pool.connect();
+
   try {
-    console.log("Получен запрос на оформление заказа:", req.body);
-    console.log("Пользователь из токена:", req.user);
+    safeLog("Получен запрос на оформление заказа:", req.body);
+    safeLog("Пользователь из токена:", req.user);
     const { items } = req.body;
     // Используем userId из токена
     const userId = req.user.userId;
 
-    console.log(`Используется userId из токена: ${userId}`);
+    safeLog(`Используется userId из токена: ${userId}`);
 
     if (!userId) {
-      console.error("userId отсутствует в токене!");
+      logError("userId отсутствует в токене!");
       return res.status(403).json({ error: "Не удалось определить ID пользователя" });
     }
 
@@ -500,9 +592,11 @@ app.post("/api/orders", authenticateToken, async (req, res) => {
       return res.status(400).json({ error: "Корзина пуста" });
     }
 
-    // Создаем заказ
-    // Проверяем наличие колонки created_at
-    const checkColumn = await pool.query(`
+    // Начинаем транзакцию
+    await client.query("BEGIN");
+
+    // Проверяем наличие колонки created_at в таблице orders
+    const checkColumn = await client.query(`
       SELECT column_name 
       FROM information_schema.columns 
       WHERE table_name='orders' AND column_name='created_at'
@@ -511,14 +605,14 @@ app.post("/api/orders", authenticateToken, async (req, res) => {
     let orderResult;
     if (checkColumn.rows.length > 0) {
       // Если колонка существует, используем ее
-      orderResult = await pool.query(
+      orderResult = await client.query(
         `INSERT INTO orders (user_id, status, created_at) 
          VALUES ($1, 'pending', NOW()) RETURNING id`,
         [userId]
       );
     } else {
       // Если колонки нет, вставляем без нее
-      orderResult = await pool.query(
+      orderResult = await client.query(
         `INSERT INTO orders (user_id, status) 
          VALUES ($1, 'pending') RETURNING id`,
         [userId]
@@ -530,26 +624,70 @@ app.post("/api/orders", authenticateToken, async (req, res) => {
 
     // Добавляем товары в заказ
     for (const item of items) {
+      // Если товар кастомный, сначала сохраняем его в БД
+      let bouquetId = item.id;
+
+      if (item.isCustom) {
+        safeLog("Сохраняем кастомный букет:", item);
+        // Создаем новый букет в БД
+        const newBouquet = await client.query(
+          `INSERT INTO bouquets (name, description, price, image_url, user_id, created_at, flower_count) 
+           VALUES ($1, $2, $3, $4, $5, NOW(), $6) RETURNING id`,
+          [
+            item.name || "Кастомный букет",
+            item.description || "Создан пользователем",
+            item.price || 0,
+            item.image_url || null,
+            userId,
+            item.flowerCount || 0
+          ]
+        );
+
+        bouquetId = newBouquet.rows[0].id;
+
+        // Если есть информация о цветах, добавляем их
+        if (item.flowers && Array.isArray(item.flowers)) {
+          for (const flower of item.flowers) {
+            if (flower && flower.id) {
+              await client.query(
+                `INSERT INTO bouquet_flowers (bouquet_id, flower_id, quantity, position_x, position_y) 
+                 VALUES ($1, $2, $3, $4, $5)`,
+                [
+                  bouquetId,
+                  flower.id,
+                  flower.quantity || 1,
+                  flower.positionX || 0,
+                  flower.positionY || 0
+                ]
+              );
+            }
+          }
+        }
+      }
+
       const itemPrice = parseFloat(item.price);
       const itemQuantity = parseInt(item.quantity);
       const itemTotal = itemPrice * itemQuantity;
       totalPrice += itemTotal;
 
-      await pool.query(
+      await client.query(
         `INSERT INTO order_items (order_id, bouquet_id, quantity, price) 
          VALUES ($1, $2, $3, $4)`,
-        [orderId, item.id, itemQuantity, itemPrice]
+        [orderId, bouquetId, itemQuantity, itemPrice]
       );
     }
 
     // Обновляем общую стоимость заказа
-    await pool.query(
+    await client.query(
       "UPDATE orders SET total_price = $1 WHERE id = $2",
       [totalPrice, orderId]
     );
 
     // Очищаем корзину пользователя
-    await pool.query("DELETE FROM cart WHERE user_id = $1", [userId]);
+    await client.query("DELETE FROM cart WHERE user_id = $1", [userId]);
+
+    // Фиксируем транзакцию
+    await client.query("COMMIT");
 
     res.status(201).json({
       message: "Заказ успешно оформлен",
@@ -557,8 +695,13 @@ app.post("/api/orders", authenticateToken, async (req, res) => {
       totalPrice
     });
   } catch (error) {
-    console.error("Ошибка оформления заказа:", error);
+    // Откатываем транзакцию в случае ошибки
+    await client.query("ROLLBACK");
+    logError("Ошибка оформления заказа:", error);
     res.status(500).json({ error: "Ошибка сервера при оформлении заказа" });
+  } finally {
+    // Освобождаем клиента
+    client.release();
   }
 });
 
@@ -570,7 +713,7 @@ app.get("/api/orders", authenticateToken, async (req, res) => {
 
     res.json(orders);
   } catch (error) {
-    console.error("Ошибка получения заказов:", error);
+    logError("Ошибка получения заказов:", error);
     res.status(500).json({ error: "Ошибка сервера при получении заказов" });
   }
 });
@@ -589,7 +732,7 @@ app.post("/api/users/:userId/make-admin", authenticateToken, isAdmin, async (req
 
     res.json({ message: "Пользователь назначен администратором" });
   } catch (error) {
-    console.error("Ошибка назначения администратором:", error);
+    logError("Ошибка назначения администратором:", error);
     res.status(500).json({ error: "Ошибка сервера" });
   }
 });
@@ -623,7 +766,7 @@ app.delete("/api/bouquets/:id", authenticateToken, isAdmin, async (req, res) => 
 
     res.json({ message: "Букет успешно удален", deletedBouquet: result.rows[0] });
   } catch (error) {
-    console.error("Ошибка удаления букета:", error);
+    logError("Ошибка удаления букета:", error);
     res.status(500).json({ error: "Ошибка сервера" });
   }
 });
@@ -636,7 +779,7 @@ app.get("/api/users", authenticateToken, isAdmin, async (req, res) => {
     );
     res.json(users.rows);
   } catch (error) {
-    console.error("Ошибка получения списка пользователей:", error);
+    logError("Ошибка получения списка пользователей:", error);
     res.status(500).json({ error: "Ошибка сервера" });
   }
 }); // ✅ Закрываем app.get
@@ -657,7 +800,7 @@ app.post('/api/flowers', authenticateToken, isAdmin, async (req, res) => {
       flower: newFlower
     });
   } catch (error) {
-    console.error('Ошибка при добавлении цветка:', error);
+    logError('Ошибка при добавлении цветка:', error);
     res.status(500).json({ error: 'Внутренняя ошибка сервера' });
   }
 });
@@ -683,7 +826,7 @@ app.put('/api/flowers/:id', authenticateToken, isAdmin, async (req, res) => {
       flower: updatedFlower
     });
   } catch (error) {
-    console.error('Ошибка при обновлении цветка:', error);
+    logError('Ошибка при обновлении цветка:', error);
     res.status(500).json({ error: 'Внутренняя ошибка сервера' });
   }
 });
@@ -704,7 +847,7 @@ app.delete('/api/flowers/:id', authenticateToken, isAdmin, async (req, res) => {
       flower: deletedFlower
     });
   } catch (error) {
-    console.error('Ошибка при удалении цветка:', error);
+    logError('Ошибка при удалении цветка:', error);
     res.status(500).json({ error: 'Внутренняя ошибка сервера' });
   }
 });
@@ -720,11 +863,11 @@ app.use("/uploads", express.static("uploads"));
 
 // Запускаем сервер
 app.listen(port, () => {
-  console.log('\n============================');
-  console.log(`🚀 Сервер запущен на порту ${port}`);
-  console.log(`📂 Директория проекта: ${process.cwd()}`);
-  console.log(`🌐 API доступно по адресу: http://localhost:${port}`);
-  console.log(`📊 ENV: ${process.env.NODE_ENV || 'development'}`);
-  console.log('============================\n');
+  safeLog('\n============================');
+  safeLog(`🚀 Сервер запущен на порту ${port}`);
+  safeLog(`📂 Директория проекта: ${process.cwd()}`);
+  safeLog(`🌐 API доступно по адресу: http://localhost:${port}`);
+  safeLog(`📊 ENV: ${process.env.NODE_ENV || 'development'}`);
+  safeLog('============================\n');
 });
 

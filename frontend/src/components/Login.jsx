@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 
 function Login() {
   const [formData, setFormData] = useState({
-    username: "",
+    loginOrEmail: "",
     password: ""
   });
   const [error, setError] = useState("");
@@ -20,7 +20,7 @@ function Login() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!formData.username || !formData.password) {
+    if (!formData.loginOrEmail || !formData.password) {
       setError("Пожалуйста, заполните все поля");
       return;
     }
@@ -69,9 +69,9 @@ function Login() {
       <form onSubmit={handleSubmit} style={styles.form}>
         <input
           type="text"
-          name="username"
-          placeholder="Имя пользователя"
-          value={formData.username}
+          name="loginOrEmail"
+          placeholder="Логин"
+          value={formData.loginOrEmail}
           onChange={handleChange}
           style={styles.input}
           disabled={loading}

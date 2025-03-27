@@ -103,12 +103,12 @@ router.post("/register", async (req, res) => {
 // Вход пользователя
 router.post("/login", async (req, res) => {
   try {
-    const { username, password } = req.body;
+    const { loginOrEmail, password } = req.body;
 
-    // Ищем пользователя в базе
+    // Ищем пользователя в базе по имени пользователя или email
     const result = await pool.query(
-      "SELECT * FROM users WHERE username = $1",
-      [username]
+      "SELECT * FROM users WHERE username = $1 OR email = $1",
+      [loginOrEmail]
     );
 
     if (result.rows.length === 0) {

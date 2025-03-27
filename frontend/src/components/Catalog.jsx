@@ -47,60 +47,51 @@ function Catalog() {
       });
   }, []);
 
-  const handleAddToCart = (bouquet) => {
-    // Получаем актуальные значения из localStorage при каждом вызове функции
+  const handleAddToCart = async (bouquet) => {
     const currentToken = localStorage.getItem("token");
     const currentUserId = localStorage.getItem("userId");
 
     if (!currentToken || !currentUserId) {
-      alert("Для добавления в корзину необходимо войти в аккаунт");
-      navigate('/login');
+      if (window.confirm("Для добавления в корзину необходимо войти. Перейти на страницу входа?")) {
+        navigate('/login');
+      }
       return;
     }
 
-    console.log("Добавляем букет в корзину:", bouquet.id);
-    console.log("Токен аутентификации:", currentToken);
-    console.log("ID пользователя:", currentUserId);
+    try {
+      // Проверяем, есть ли букет в базе
+      const checkResponse = await fetch(`http://localhost:5000/api/bouquets/${bouquet.id}`);
+      if (!checkResponse.ok) {
+        throw new Error('Букет не найден в базе данных');
+      }
 
-    // Проверяем, есть ли букет из демо-данных
-    const isDemoBouquet = !bouquet.id || bouquet.id > 100;
-
-    // Если это демо-букет, сначала создаем его в базе
-    if (isDemoBouquet) {
-      alert("Букет доступен только для просмотра. Выберите букет из каталога.");
-      return;
-    }
-
-    fetch("http://localhost:5000/api/cart", {
-      method: "POST",
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${currentToken}`
-      },
-      body: JSON.stringify({
-        userId: currentUserId,
-        bouquetId: bouquet.id,
-        quantity: 1
-      })
-    })
-      .then(response => {
-        if (!response.ok) {
-          console.error("Ошибка ответа:", response.status, response.statusText);
-          if (response.status === 404) {
-            throw new Error('Букет не найден в базе данных');
-          }
-          throw new Error('Ошибка добавления в корзину');
-        }
-        return response.json();
-      })
-      .then(data => {
-        addToCart(bouquet);
-        alert("Букет добавлен в корзину!");
-      })
-      .catch(error => {
-        console.error("Ошибка:", error);
-        alert("Не удалось добавить букет в корзину: " + error.message);
+      const response = await fetch("http://localhost:5000/api/cart", {
+        method: "POST",
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${currentToken}`
+        },
+        body: JSON.stringify({
+          userId: currentUserId,
+          bouquetId: bouquet.id,
+          quantity: 1
+        })
       });
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error('Букет не найден в базе данных');
+        }
+        throw new Error('Ошибка добавления в корзину');
+      }
+
+      const data = await response.json();
+      addToCart(bouquet);
+      alert("Букет добавлен в корзину!");
+    } catch (error) {
+      console.error("Ошибка:", error);
+      alert("Не удалось добавить букет в корзину: " + error.message);
+    }
   };
 
   const handleToggleFavorite = (bouquet) => {
@@ -190,6 +181,31 @@ function Catalog() {
                     transition: 'transform 0.3s ease'
                   }}
                 />
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleToggleFavorite(bouquet);
+                  }}
+                  style={{
+                    position: 'absolute',
+                    top: '10px',
+                    right: '10px',
+                    background: 'rgba(255, 255, 255, 0.9)',
+                    border: 'none',
+                    borderRadius: '50%',
+                    width: '40px',
+                    height: '40px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '20px',
+                    boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
+                    transition: 'all 0.3s ease'
+                  }}
+                >
+                  {isFavorite(bouquet.id) ? '❤️' : '🤍'}
+                </button>
               </div>
 
               <div style={{

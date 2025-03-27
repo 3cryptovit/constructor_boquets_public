@@ -5,6 +5,7 @@ import '../index.css';
 const Header = () => {
   const [user, setUser] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const navigate = useNavigate();
 
   const checkAuth = () => {
@@ -36,82 +37,59 @@ const Header = () => {
     localStorage.removeItem("user");
     setUser(null);
     setIsAdmin(false);
+    setIsMenuOpen(false);
     navigate('/');
+  };
+
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen);
   };
 
   // Проверка состояния пользователя при рендеринге
   console.log("Текущее состояние пользователя:", user, "Администратор:", isAdmin);
 
   return (
-    <header className="site-header">
-      <div className="container" style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between'
-      }}>
-        <Link to="/" className="logo-container" style={{
-          display: 'flex',
-          alignItems: 'center',
-          textDecoration: 'none'
-        }}>
-          <img src="/assets/logo.svg" alt="Boquet Shop" className="logo" style={{ height: '40px' }} />
-          <span style={{
-            fontFamily: "'Playfair Display', serif",
-            fontSize: '24px',
-            fontWeight: '700',
-            color: '#333',
-            marginLeft: '10px',
-            whiteSpace: 'nowrap'
-          }}>
-            Boquet Shop
-          </span>
+    <header className="header">
+      <div className="header-content">
+        <Link to="/" className="logo">
+          Boquet Shop
         </Link>
 
-        <nav style={{
-          display: 'flex',
-          gap: '15px'
-        }}>
-          <Link to="/">
-            <button className="nav-button">Главная</button>
-          </Link>
-          <Link to="/catalog">
-            <button className="nav-button">Каталог</button>
-          </Link>
-          <Link to="/constructor">
-            <button className="nav-button">Конструктор</button>
-          </Link>
-          <Link to="/cart">
-            <button className="nav-button">Корзина</button>
-          </Link>
-          <Link to="/about">
-            <button className="nav-button">О нас</button>
-          </Link>
-          {isAdmin && (
-            <Link to="/admin">
-              <button className="nav-button admin-button">Админ-панель</button>
-            </Link>
-          )}
-        </nav>
+        <div className={`nav-links ${isMenuOpen ? 'active' : ''}`}>
+          <Link to="/catalog">Каталог</Link>
+          <Link to="/constructor">Конструктор</Link>
+          <Link to="/favorites">Избранное</Link>
+          <Link to="/cart">Корзина</Link>
+          <Link to="/contacts">Контакты</Link>
+          <Link to="/about">О нас</Link>
+        </div>
 
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '15px'
-        }}>
+        <div className="burger-menu" onClick={toggleMenu}>
+          ☰
+        </div>
+
+        <div className="user-controls">
           {user ? (
             <div className="user-controls">
               <span className="welcome">Добро пожаловать, {user}!</span>
               {isAdmin && (
-                <span className="admin-badge" style={{
-                  background: '#ff4081',
-                  color: 'white',
-                  padding: '4px 8px',
-                  borderRadius: '4px',
-                  fontSize: '12px',
-                  marginLeft: '8px'
-                }}>
-                  Администратор
-                </span>
+                <>
+                  <span className="admin-badge" style={{
+                    background: '#ff4081',
+                    color: 'white',
+                    padding: '4px 8px',
+                    borderRadius: '4px',
+                    fontSize: '12px',
+                    marginLeft: '8px'
+                  }}>
+                    Администратор
+                  </span>
+                  <Link to="/admin">
+                    <button className="nav-button admin-button">
+                      Админ-панель
+                    </button>
+                  </Link>
+                </>
               )}
               <button
                 onClick={handleLogout}

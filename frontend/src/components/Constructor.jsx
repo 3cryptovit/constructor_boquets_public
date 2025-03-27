@@ -413,7 +413,7 @@ const Constructor = () => {
                 alignItems: 'center',
                 gap: '10px'
               }}>
-                <span>Выбрано цветков:</span>
+                <span>Выбрано цветов:</span>
                 <input
                   type="number"
                   min="1"

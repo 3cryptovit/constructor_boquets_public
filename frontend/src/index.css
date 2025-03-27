@@ -149,39 +149,169 @@ h3 {
 }
 
 /* ✅ Стили для хедера */
-.site-header {
+.header {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   z-index: 1000;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(5px);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-  padding: 10px 20px;
+  background-color: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   height: 80px;
-}
-
-header a {
-  color: #333;
-  font-weight: bold;
-  margin: 0 15px;
-}
-
-.logo-container {
   display: flex;
   align-items: center;
-  padding: 5px 10px;
+}
+
+.header-content {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 100%;
 }
 
 .logo {
-  height: 60px;
+  font-size: 22px;
+  font-weight: bold;
+  color: var(--secondary-color);
+  text-decoration: none;
   transition: transform 0.3s ease;
 }
 
 .logo:hover {
   transform: scale(1.05);
-  /* лёгкое увеличение при наведении */
+  text-decoration: none;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 0 20px;
+}
+
+.nav-links a {
+  color: #333;
+  font-weight: 500;
+  text-decoration: none;
+  padding: 5px 0;
+  position: relative;
+  transition: color 0.3s ease;
+}
+
+.nav-links a:after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 2px;
+  bottom: 0;
+  left: 0;
+  background-color: var(--secondary-color);
+  transition: width 0.3s ease;
+}
+
+.nav-links a:hover {
+  color: var(--secondary-color);
+  text-decoration: none;
+}
+
+.nav-links a:hover:after {
+  width: 100%;
+}
+
+.user-controls {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  white-space: nowrap;
+}
+
+.welcome {
+  font-size: 14px;
+  color: #333;
+  font-weight: 500;
+}
+
+.logout-btn {
+  background: white;
+  color: #ff4081;
+  border: 2px solid #ff4081;
+  padding: 5px 10px;
+  border-radius: 8px;
+  font-weight: bold;
+  transition: 0.3s;
+}
+
+.logout-btn:hover {
+  background: #ff4081;
+  color: white;
+  box-shadow: 0 0 10px rgba(255, 64, 129, 0.3);
+}
+
+/* Адаптивные стили для шапки */
+@media (max-width: 768px) {
+  .header-content {
+    justify-content: space-between;
+    padding: 0 15px;
+  }
+
+  .nav-links {
+    display: none;
+    position: absolute;
+    top: 80px;
+    left: 0;
+    width: 100%;
+    flex-direction: column;
+    background-color: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
+    padding: 15px 0;
+    z-index: 999;
+    overflow: auto;
+    max-height: calc(100vh - 80px);
+  }
+
+  .nav-links.active {
+    display: flex;
+  }
+
+  .nav-links a {
+    width: 100%;
+    text-align: center;
+    padding: 12px 0;
+    font-size: 16px;
+  }
+
+  .burger-menu {
+    display: block;
+    font-size: 24px;
+    cursor: pointer;
+    color: var(--secondary-color);
+  }
+
+  .user-controls {
+    justify-content: flex-end;
+    gap: 10px;
+  }
+
+  .welcome {
+    display: none;
+  }
+}
+
+/* Стили для бургер-меню */
+.burger-menu {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .burger-menu {
+    display: block;
+  }
 }
 
 /* Основной контент */
@@ -353,27 +483,6 @@ header a {
 
 .link:hover {
   text-decoration: underline;
-}
-
-.welcome {
-  font-size: 14px;
-  color: #333;
-}
-
-.logout-btn {
-  background: white;
-  color: #ff4081;
-  border: 2px solid #ff4081;
-  padding: 5px 10px;
-  border-radius: 8px;
-  font-weight: bold;
-  transition: 0.3s;
-}
-
-.logout-btn:hover {
-  background: #ff4081;
-  color: white;
-  box-shadow: 0 0 10px rgba(255, 64, 129, 0.3);
 }
 
 /* Стили для карточек букетов */
@@ -598,10 +707,9 @@ input[type=range]::-moz-range-thumb:hover {
 }
 
 .nav-button:hover {
-  background-color: white;
-  color: #ff4081;
-  border: 1px solid #ff4081;
-  box-shadow: 0 0 12px rgba(255, 64, 129, 0.3);
+  background: white;
+  color: black;
+  box-shadow: 0 0 10px rgba(255, 0, 100, 0.5);
   transform: translateY(-2px);
 }
 
@@ -621,4 +729,22 @@ input[type=range]::-moz-range-thumb:hover {
 
 .nav-button.admin-button:hover {
   background-color: #f50057;
+}
+
+/* Специальный стиль для кнопки админ-панели */
+.admin-button {
+  background-color: #673ab7;
+  color: white;
+  border: none;
+  box-shadow: 0 2px 8px rgba(103, 58, 183, 0.3);
+  display: flex;
+  align-items: center;
+  font-weight: bold;
+}
+
+.admin-button:hover {
+  background-color: #5e35b1;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(103, 58, 183, 0.5);
 }

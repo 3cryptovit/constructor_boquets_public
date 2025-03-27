@@ -8,9 +8,10 @@ const Constructor = () => {
   const [totalFlowers, setTotalFlowers] = useState(1);
   const [selectedFlower, setSelectedFlower] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [bouquetName, setBouquetName] = useState("Мой букет");
-  const [bouquetDescription, setBouquetDescription] = useState("Красивый букет ручной работы");
-  const [bouquetPrice, setBouquetPrice] = useState(3500);
+  const [bouquetName, setBouquetName] = useState("");
+  const [bouquetDescription, setBouquetDescription] = useState("");
+  const [bouquetPrice, setBouquetPrice] = useState(1000);
+  const [customImage, setCustomImage] = useState(null);
   const navigate = useNavigate();
 
   // Проверка авторизации
@@ -53,7 +54,7 @@ const Constructor = () => {
           name: bouquetName,
           description: bouquetDescription,
           price: bouquetPrice,
-          image_url: "/assets/custom_bouquet.webp"
+          image_url: customImage || "/assets/custom_bouquet.webp"
         }),
       });
 
@@ -123,6 +124,21 @@ const Constructor = () => {
                   style={{ padding: "8px", width: "100px" }}
                 />
                 <span style={{ marginLeft: "5px" }}>₽</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <label>Фото букета: </label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      const imageUrl = URL.createObjectURL(file);
+                      setCustomImage(imageUrl);
+                    }
+                  }}
+                  style={{ padding: "8px" }}
+                />
               </div>
             </div>
 

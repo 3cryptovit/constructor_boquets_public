@@ -82,7 +82,7 @@ function Cart() {
       return;
     }
 
-    fetch(`http://localhost:5000/api/cart/${cartItemId}`, {
+    fetch(`http://localhost:5000/api/cart/item/${cartItemId}`, {
       method: "DELETE",
       headers: {
         'Authorization': `Bearer ${token}`
@@ -108,9 +108,8 @@ function Cart() {
     if (newQuantity < 1) return;
 
     const token = localStorage.getItem("token");
-    const userId = localStorage.getItem("userId");
 
-    if (!token || !userId) {
+    if (!token) {
       setError("Требуется авторизация");
       return;
     }
@@ -123,14 +122,13 @@ function Cart() {
       return item;
     }));
 
-    fetch(`http://localhost:5000/api/cart/${cartItemId}`, {
+    fetch(`http://localhost:5000/api/cart/item/${cartItemId}`, {
       method: "PUT",
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
       body: JSON.stringify({
-        userId: userId,
         quantity: newQuantity
       })
     })
